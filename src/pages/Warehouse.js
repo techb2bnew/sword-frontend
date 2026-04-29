@@ -31,7 +31,7 @@ export default function Warehouse({ products, push }) {
       setMovements(mRes.data);
       setBins(bRes.data);
     } catch { push("Failed to load warehouse data", "error"); }
-  }, [push]);
+  }, [push, selectedWhId]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
