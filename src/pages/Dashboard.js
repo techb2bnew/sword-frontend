@@ -1,10 +1,10 @@
 import React from "react";
 
-export default function Dashboard() {
+export default function Dashboard({ products = [] }) {
   const stats = [
     { label: "Total Revenue", value: "₹4.8M", icon: "💰", trend: "+12.5%", up: true, c: "c1 i1" },
     { label: "Active Orders", value: "142", icon: "🛒", trend: "+8.2%", up: true, c: "c2 i2" },
-    { label: "Production", value: "85%", icon: "🏭", trend: "-2.4%", up: false, c: "c3 i3" },
+    { label: "Products", value: products.length, icon: "📦", trend: "Inventory", up: true, c: "c3 i3" },
     { label: "Customers", value: "892", icon: "👥", trend: "+14.1%", up: true, c: "c4 i4" },
     { label: "Alerts", value: "12", icon: "⚠️", trend: "Critical", up: false, c: "c5 i5" },
   ];

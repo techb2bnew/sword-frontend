@@ -19,6 +19,15 @@ export default function Warehouse({ products, push }) {
   const [showTModal, setShowTModal] = useState(false);
   const [tForm, setTForm] = useState({ product_id: "", from_warehouse_id: "", to_warehouse_id: "", to_bin_id: "", quantity: "", reason: "" });
 
+  // Rack Form
+  const [showRModal, setShowRModal] = useState(false);
+  const [rForm, setRForm] = useState({ warehouse_id: "", rack_code: "", bin_count: 5 });
+  const [rackActionData, setRackActionData] = useState(null);
+  const [showRackEditModal, setShowRackEditModal] = useState(false);
+  const [showRackDeleteModal, setShowRackDeleteModal] = useState(false);
+  const [newRackName, setNewRackName] = useState("");
+  const [newBinCount, setNewBinCount] = useState(0);
+
   const fetchData = useCallback(async () => {
     try {
       const [wRes, mRes, bRes] = await Promise.all([
@@ -59,6 +68,47 @@ export default function Warehouse({ products, push }) {
       fetchData();
     } catch { push("Error transferring stock", "error"); }
     finally { setLoading(false); }
+  };
+
+  const saveRack = async () => {
+    if (!rForm.warehouse_id || !rForm.rack_code) return push("Warehouse and Rack Code are required", "error");
+    setLoading(true);
+    try {
+      await axios.post(`${API}/warehouse/bins/bulk`, rForm);
+      push(`Rack ${rForm.rack_code} added successfully!`);
+      setShowRModal(false);
+      setRForm({ warehouse_id: "", rack_code: "", bin_count: 5 });
+      fetchData();
+    } catch { push("Error adding rack", "error"); }
+    finally { setLoading(false); }
+  };
+
+  const handleRackUpdate = async () => {
+    if (!newRackName) return;
+    setLoading(true);
+    try {
+      await axios.put(`${API}/warehouse/bins/rack/${rackActionData.warehouse_id}/${rackActionData.rack_code}`, { 
+        new_code: newRackName,
+        bin_count: newBinCount
+      });
+      push(`Rack ${newRackName} updated successfully`);
+      setShowRackEditModal(false);
+      fetchData();
+    } catch (err) { 
+      push(err.response?.data?.error || "Error updating rack", "error"); 
+    } finally { setLoading(false); }
+  };
+
+  const handleRackDelete = async () => {
+    setLoading(true);
+    try {
+      await axios.delete(`${API}/warehouse/bins/rack/${rackActionData.warehouse_id}/${rackActionData.rack_code}`);
+      push("Rack deleted successfully");
+      setShowRackDeleteModal(false);
+      fetchData();
+    } catch (err) { 
+      push(err.response?.data?.error || "Error deleting rack", "error"); 
+    } finally { setLoading(false); }
   };
 
   return (
@@ -113,9 +163,15 @@ export default function Warehouse({ products, push }) {
           <div className="section-header" style={{ marginBottom: 24 }}>
             <div className="section-title">Warehouse Layout & Occupancy</div>
             <div style={{ display: 'flex', gap: 10 }}>
-              <div className="pill blue" style={{ padding: '8px 15px' }}>Total Bins: {bins.length}</div>
-              <div className="pill green" style={{ padding: '8px 15px' }}>Available: {bins.filter(b => b.status === 'Empty').length}</div>
-              <div className="pill yellow" style={{ padding: '8px 15px' }}>Occupied: {bins.filter(b => b.status === 'Occupied').length}</div>
+              <div className="pill blue" style={{ padding: '8px 15px' }}>
+                Total Bins: {bins.filter(b => !selectedWhId || b.warehouse_id === selectedWhId).length}
+              </div>
+              <div className="pill green" style={{ padding: '8px 15px' }}>
+                Available: {bins.filter(b => (!selectedWhId || b.warehouse_id === selectedWhId) && b.status === 'Empty').length}
+              </div>
+              <div className="pill yellow" style={{ padding: '8px 15px' }}>
+                Occupied: {bins.filter(b => (!selectedWhId || b.warehouse_id === selectedWhId) && b.status === 'Occupied').length}
+              </div>
             </div>
             <div style={{ display: 'flex', gap: 10 }}>
               <select 
@@ -127,60 +183,129 @@ export default function Warehouse({ products, push }) {
                 <option value="">All Warehouses</option>
                 {warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
               </select>
-              <button className="btn btn-primary" onClick={() => push("Feature coming soon!")}>＋ Add New Rack</button>
+              <button className="btn btn-primary" onClick={() => { setRForm({ ...rForm, warehouse_id: selectedWhId || "" }); setShowRModal(true); }}>＋ Add New Rack</button>
             </div>
           </div>
+
+          {showRModal && (
+            <Modal
+              title="Add New Storage Rack"
+              onClose={() => setShowRModal(false)}
+              onConfirm={saveRack}
+              loading={loading}
+              confirmText="Generate Rack"
+            >
+              <div className="form-grid" style={{ gridTemplateColumns: '1fr' }}>
+                <div className="form-group">
+                  <label>Select Warehouse</label>
+                  <select value={rForm.warehouse_id} onChange={e => setRForm({...rForm, warehouse_id: e.target.value})} style={{ width: '100%', padding: 10, borderRadius: 8, background: 'var(--bg-base)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
+                    <option value="">Select Warehouse</option>
+                    {warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Rack Code (e.g. R-10)</label>
+                  <input placeholder="e.g. R-5" value={rForm.rack_code} onChange={e => setRForm({...rForm, rack_code: e.target.value})} />
+                </div>
+                <div className="form-group">
+                  <label>Number of Bins to Create</label>
+                  <input type="number" min="1" max="50" value={rForm.bin_count} onChange={e => setRForm({...rForm, bin_count: parseInt(e.target.value)})} />
+                  <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 5 }}>Each bin will be named automatically (B-01, B-02, etc.)</div>
+                </div>
+              </div>
+            </Modal>
+          )}
 
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 30 }}>
             {Array.from(new Set(bins
               .filter(b => !selectedWhId || b.warehouse_id === selectedWhId)
               .map(b => b.rack_code)
-            )).map(rack => (
-              <div key={rack} style={{ flex: '1 1 300px', minWidth: 300 }}>
-                <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 15, display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span className="pill purple" style={{ padding: '4px 12px' }}>Rack: {rack}</span>
-                  <div style={{ flex: 1, height: 1, background: 'var(--border)' }}></div>
-                </div>
-                
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 10 }}>
-                  {bins
-                    .filter(b => b.rack_code === rack && (!selectedWhId || b.warehouse_id === selectedWhId))
-                    .map(bin => (
-                    <div 
-                      key={bin.id} 
-                      className={`card ${bin.status === 'Occupied' ? 'occupied' : 'empty'}`}
-                      style={{ 
-                        padding: 12, 
-                        border: '1px solid var(--border)', 
-                        background: bin.status === 'Occupied' ? 'rgba(99, 102, 241, 0.05)' : 'var(--bg-surface)',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        borderRadius: 12
-                      }}
-                      onClick={() => {
-                        setTForm({ ...tForm, to_bin_id: bin.id, to_warehouse_id: bin.warehouse_id });
-                        setShowTModal(true);
-                      }}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
-                        <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)' }}>{bin.bin_code}</div>
-                        <div className={`status-dot ${bin.status === 'Occupied' ? 'active' : ''}`} style={{ width: 8, height: 8, borderRadius: '50%', background: bin.status === 'Occupied' ? '#10b981' : '#cbd5e1' }}></div>
-                      </div>
-                      
-                      {bin.status === 'Occupied' ? (
-                        <>
-                          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--accent-1)', marginBottom: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{bin.product_name}</div>
-                          <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>Qty: {bin.product_stock} {bin.uom}</div>
-                        </>
-                      ) : (
-                        <div style={{ fontSize: 11, color: 'var(--text-muted)', fontStyle: 'italic' }}>Empty - Click to Assign</div>
-                      )}
+            )).map(rack => {
+              const firstBin = bins.find(b => b.rack_code === rack && (!selectedWhId || b.warehouse_id === selectedWhId));
+              return (
+                <div key={rack} style={{ flex: '1 1 350px', minWidth: 350, background: 'var(--bg-surface)', padding: 20, borderRadius: 16, border: '1px solid var(--border)' }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 15, display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span className="pill purple" style={{ padding: '4px 12px' }}>Rack: {rack}</span>
+                    <div style={{ flex: 1, height: 1, background: 'var(--border)' }}></div>
+                    <div style={{ display: 'flex', gap: 5 }}>
+                      <button 
+                        onClick={() => { 
+                          setRackActionData(firstBin); 
+                          setNewRackName(rack); 
+                          setNewBinCount(bins.filter(b => b.rack_code === rack && (!selectedWhId || b.warehouse_id === selectedWhId)).length);
+                          setShowRackEditModal(true); 
+                        }}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, opacity: 0.6 }}
+                      >✏️</button>
+                      <button 
+                        onClick={() => { setRackActionData(firstBin); setShowRackDeleteModal(true); }}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, opacity: 0.6 }}
+                      >🗑️</button>
                     </div>
-                  ))}
+                  </div>
+                
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 10 }}>
+                    {bins
+                      .filter(b => b.rack_code === rack && (!selectedWhId || b.warehouse_id === selectedWhId))
+                      .map(bin => (
+                      <div 
+                        key={bin.id} 
+                        className={`card ${bin.status === 'Occupied' ? 'occupied' : 'empty'}`}
+                        style={{ 
+                          padding: 12, 
+                          border: '1px solid var(--border)', 
+                          background: bin.status === 'Occupied' ? 'rgba(99, 102, 241, 0.05)' : 'var(--bg-surface)',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s',
+                          borderRadius: 12
+                        }}
+                        onClick={() => {
+                          setTForm({ ...tForm, to_bin_id: bin.id, to_warehouse_id: bin.warehouse_id });
+                          setShowTModal(true);
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+                          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)' }}>{bin.bin_code}</div>
+                          <div className={`status-dot ${bin.status === 'Occupied' ? 'active' : ''}`} style={{ width: 8, height: 8, borderRadius: '50%', background: bin.status === 'Occupied' ? '#10b981' : '#cbd5e1' }}></div>
+                        </div>
+                        
+                        {bin.status === 'Occupied' ? (
+                          <>
+                            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--accent-1)', marginBottom: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{bin.product_name}</div>
+                            <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>Qty: {bin.product_stock} {bin.uom}</div>
+                          </>
+                        ) : (
+                          <div style={{ fontSize: 11, color: 'var(--text-muted)', fontStyle: 'italic' }}>Empty - Click to Assign</div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          {showRackEditModal && (
+            <Modal title="Configure Rack" onClose={() => setShowRackEditModal(false)} onConfirm={handleRackUpdate} loading={loading} confirmText="Save Changes">
+              <div className="form-grid" style={{ gridTemplateColumns: '1fr' }}>
+                <div className="form-group">
+                  <label>Rack Code / Name</label>
+                  <input value={newRackName} onChange={e => setNewRackName(e.target.value)} />
+                </div>
+                <div className="form-group">
+                  <label>Total Bins in Rack</label>
+                  <input type="number" min="1" max="50" value={newBinCount} onChange={e => setNewBinCount(parseInt(e.target.value))} />
+                  <p style={{ fontSize: 10, marginTop: 5, color: 'var(--text-muted)' }}>Increasing the count will add new bins. Decreasing will remove empty trailing bins.</p>
                 </div>
               </div>
-            ))}
-          </div>
+            </Modal>
+          )}
+
+          {showRackDeleteModal && (
+            <Modal title="Delete Rack" type="danger" onClose={() => setShowRackDeleteModal(false)} onConfirm={handleRackDelete} loading={loading} confirmText="Delete Rack">
+              <p>Are you sure you want to delete <strong>Rack {rackActionData?.rack_code}</strong>?</p>
+              <p style={{ fontSize: 12, marginTop: 10, opacity: 0.7 }}>This will remove all bins in this rack. You can only delete empty racks.</p>
+            </Modal>
+          )}
         </>
       )}
 

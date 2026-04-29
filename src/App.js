@@ -73,7 +73,7 @@ function App() {
         <Topbar activeModule={activeModule} />
         
         <div className="page">
-          {activeModule === "dashboard" && <Dashboard />}
+          {activeModule === "dashboard" && <Dashboard products={products} />}
           {activeModule === "warehouse" && <Warehouse products={products} push={push} />}
           {activeModule === "inventory" && <Inventory products={products} onRefresh={fetchProducts} push={push} />}
           {activeModule === "purchases" && <Purchases products={products} onRefreshProducts={fetchProducts} push={push} />}
