@@ -1,7 +1,7 @@
 import React from "react";
 
 export default function Sidebar({ activeModule, setActiveModule, user, onLogout }) {
-  const menu = [
+  const adminMenu = [
     { id: "dashboard", label: "Dashboard", icon: "📊" },
     { id: "warehouse", label: "Warehouse", icon: "🏘️" },
     { id: "inventory", label: "Inventory", icon: "📦" },
@@ -12,6 +12,14 @@ export default function Sidebar({ activeModule, setActiveModule, user, onLogout 
     { id: "finance", label: "Finance & Accounts", icon: "💰" },
     { id: "reports", label: "Reports", icon: "📈" },
   ];
+
+  const supplierMenu = [
+    { id: "supplier-dashboard", label: "Supplier Dashboard", icon: "📊" },
+    { id: "supplier-quotations", label: "Quotations", icon: "📄" },
+    { id: "inventory", label: "Products List", icon: "📦" },
+  ];
+
+  const menu = user.role === 'supplier' ? supplierMenu : adminMenu;
 
   return (
     <aside className="sidebar">

@@ -30,10 +30,11 @@ export default function Warehouse({ products, push }) {
 
   const fetchData = useCallback(async () => {
     try {
+      const headers = { Authorization: `Bearer ${localStorage.getItem("erp_token")}` };
       const [wRes, mRes, bRes] = await Promise.all([
-        axios.get(`${API}/warehouse`),
-        axios.get(`${API}/warehouse/movements`),
-        axios.get(`${API}/warehouse/bins`)
+        axios.get(`${API}/warehouse`, { headers }),
+        axios.get(`${API}/warehouse/movements`, { headers }),
+        axios.get(`${API}/warehouse/bins`, { headers })
       ]);
       setWarehouses(wRes.data);
       if (wRes.data.length > 0 && !selectedWhId) setSelectedWhId(wRes.data[0].id);

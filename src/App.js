@@ -16,6 +16,8 @@ import Sales from "./pages/Sales";
 import Transport from "./pages/Transport";
 import Warehouse from "./pages/Warehouse";
 import Finance from "./pages/Finance";
+import SupplierDashboard from "./pages/SupplierDashboard";
+import SupplierQuotations from "./pages/SupplierQuotations";
 
 // ── Toast Hook ──────────────────────────────────────────────────────────────
 function useToast() {
@@ -37,7 +39,9 @@ function App() {
 
   const fetchProducts = useCallback(async () => {
     try {
-      const res = await axios.get(`${API}/inventory/products`);
+      const res = await axios.get(`${API}/inventory/products`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("erp_token")}` }
+      });
       setProducts(res.data);
     } catch {
       push("Failed to load inventory data", "error");
@@ -46,7 +50,14 @@ function App() {
 
   useEffect(() => {
     const savedUser = localStorage.getItem("erp_user");
-    if (savedUser) setUser(JSON.parse(savedUser));
+    if (savedUser) {
+      const parsedUser = JSON.parse(savedUser);
+      setUser(parsedUser);
+      // Default module based on role
+      if (parsedUser.role === 'supplier' && activeModule === 'dashboard') {
+        setActiveModule('supplier-dashboard');
+      }
+    }
     fetchProducts();
   }, [fetchProducts]);
 
@@ -75,11 +86,16 @@ function App() {
         <div className="page">
           {activeModule === "dashboard" && <Dashboard products={products} />}
           {activeModule === "warehouse" && <Warehouse products={products} push={push} />}
-          {activeModule === "inventory" && <Inventory products={products} onRefresh={fetchProducts} push={push} />}
+          {activeModule === "inventory" && <Inventory products={products} onRefresh={fetchProducts} push={push} user={user} />}
           {activeModule === "purchases" && <Purchases products={products} onRefreshProducts={fetchProducts} push={push} />}
           {activeModule === "sales" && <Sales push={push} />}
           {activeModule === "transport" && <Transport push={push} />}
           {activeModule === "finance" && <Finance />}
+          
+          {/* Supplier Modules */}
+          {activeModule === "supplier-dashboard" && <SupplierDashboard user={user} products={products} push={push} setActiveModule={setActiveModule} />}
+          {activeModule === "supplier-quotations" && <SupplierQuotations products={products} push={push} />}
+          
           {["manufacturing", "reports"].includes(activeModule) && (
             <div className="empty-state">
               <div className="icon">🏗️</div>

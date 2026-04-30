@@ -9,7 +9,7 @@ const getStockPill = (stock) => {
   return <span className="pill green">Healthy</span>;
 };
 
-export default function Inventory({ products, onRefresh, push }) {
+export default function Inventory({ products, onRefresh, push, user }) {
   const [form, setForm] = useState({ name: "", price: "", barcode: "", stock: 0, type: "finished_good", uom: "units", warehouse_id: "", bin_id: "" });
   const [loading, setLoading] = useState(false);
   const [editId, setEditId] = useState(null);
@@ -24,9 +24,10 @@ export default function Inventory({ products, onRefresh, push }) {
 
   const fetchLocations = useCallback(async () => {
     try {
+      const headers = { Authorization: `Bearer ${localStorage.getItem("erp_token")}` };
       const [wRes, bRes] = await Promise.all([
-        axios.get(`${API}/warehouse`),
-        axios.get(`${API}/warehouse/bins`)
+        axios.get(`${API}/warehouse`, { headers }),
+        axios.get(`${API}/warehouse/bins`, { headers })
       ]);
       setWarehouses(wRes.data);
       setBins(bRes.data);
@@ -113,7 +114,7 @@ export default function Inventory({ products, onRefresh, push }) {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <button className="btn btn-primary" onClick={() => setShowModal(true)}>＋ Add New Product</button>
+          {user.role !== 'supplier' && <button className="btn btn-primary" onClick={() => setShowModal(true)}>＋ Add New Product</button>}
         </div>
       </div>
 
@@ -223,11 +224,12 @@ export default function Inventory({ products, onRefresh, push }) {
                 <tr>
                   <th>#</th>
                   <th>Product Name</th>
-                  <th>Location (WH / Rack / Bin)</th>
+                  {user.role === 'admin' && <th>Supplier</th>}
+                  {user.role !== 'supplier' && <th>Location (WH / Rack / Bin)</th>}
                   <th>Price</th>
                   <th>Barcode</th>
-                  <th>Stock</th>
-                  <th>Status</th>
+                  {user.role !== 'supplier' && <th>Stock</th>}
+                  {user.role !== 'supplier' && <th>Status</th>}
                   <th style={{ textAlign: "right" }}>Actions</th>
                 </tr>
               </thead>
@@ -242,12 +244,19 @@ export default function Inventory({ products, onRefresh, push }) {
                       <div style={{ fontWeight: 600 }}>{p.name}</div>
                       <div style={{ fontSize: 10, opacity: 0.6 }}>{p.type === 'raw_material' ? 'Raw Material' : 'Finished Good'}</div>
                     </td>
-                    <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                        <span className="pill blue" style={{ fontSize: 10 }}>{p.warehouse_name || 'Unassigned'}</span>
-                        {p.rack_code && <span className="pill purple" style={{ fontSize: 10 }}>{p.rack_code}-{p.bin_code}</span>}
-                      </div>
-                    </td>
+                    {user.role === 'admin' && (
+                      <td>
+                        <span className="pill purple" style={{ fontSize: 10 }}>{p.supplier_name || 'In-house'}</span>
+                      </td>
+                    )}
+                    {user.role !== 'supplier' && (
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                          <span className="pill blue" style={{ fontSize: 10 }}>{p.warehouse_name || 'Unassigned'}</span>
+                          {p.rack_code && <span className="pill purple" style={{ fontSize: 10 }}>{p.rack_code}-{p.bin_code}</span>}
+                        </div>
+                      </td>
+                    )}
                     <td style={{ color: "#10b981", fontWeight: 600 }}>
                       ₹{Number(p.price).toLocaleString("en-IN")}
                     </td>
@@ -256,17 +265,28 @@ export default function Inventory({ products, onRefresh, push }) {
                         {p.barcode || "—"}
                       </span>
                     </td>
-                    <td style={{ fontWeight: 600 }}>
-                      {p.stock || 0} <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 400 }}>{p.uom || 'units'}</span>
-                    </td>
-                    <td>{getStockPill(p.stock)}</td>
+                    {user.role !== 'supplier' && (
+                      <td style={{ fontWeight: 600 }}>
+                        {p.stock || 0} <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 400 }}>{p.uom || 'units'}</span>
+                      </td>
+                    )}
+                    {user.role !== 'supplier' && <td>{getStockPill(p.stock)}</td>}
                     <td style={{ textAlign: "right" }}>
-                      <button className="btn btn-secondary btn-sm" onClick={() => handleEdit(p)} style={{ padding: "5px 10px", fontSize: 12, marginRight: 5 }}>
-                        Edit
-                      </button>
-                      <button className="btn btn-danger btn-sm" onClick={() => confirmDelete(p.id)} style={{ padding: "5px 10px", fontSize: 12 }}>
-                        Delete
-                      </button>
+                      {user.role !== 'supplier' && (
+                        <>
+                          <button className="btn btn-secondary btn-sm" onClick={() => handleEdit(p)} style={{ padding: "5px 10px", fontSize: 12, marginRight: 5 }}>
+                            Edit
+                          </button>
+                          <button className="btn btn-danger btn-sm" onClick={() => confirmDelete(p.id)} style={{ padding: "5px 10px", fontSize: 12 }}>
+                            Delete
+                          </button>
+                        </>
+                      )}
+                      {user.role === 'supplier' && (
+                        <button className="btn btn-secondary btn-sm" disabled style={{ padding: "5px 10px", fontSize: 12, opacity: 0.5 }}>
+                          Read Only
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}

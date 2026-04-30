@@ -6,9 +6,16 @@ export default function AuthPage({ onLogin, push }) {
   const [tab, setTab] = useState("login");
   const [form, setForm] = useState({ username: "", email: "", password: "", role: "staff" });
   const [loading, setLoading] = useState(false);
+  const [suppliers, setSuppliers] = useState([]);
   const [error, setError] = useState("");
 
   const set = (k) => (e) => setForm((p) => ({ ...p, [k]: e.target.value }));
+
+  React.useEffect(() => {
+    if (tab === "register") {
+      axios.get(`${API}/purchases/suppliers`).then(res => setSuppliers(res.data)).catch(console.error);
+    }
+  }, [tab]);
 
   const submit = async () => {
     setError(""); setLoading(true);
@@ -20,7 +27,13 @@ export default function AuthPage({ onLogin, push }) {
         onLogin(res.data.user);
         push("Welcome back, " + res.data.user.username + "!");
       } else {
-        await axios.post(`${API}/auth/register`, { username: form.username, email: form.email, password: form.password, role: form.role });
+        await axios.post(`${API}/auth/register`, { 
+          username: form.username, 
+          email: form.email, 
+          password: form.password, 
+          role: form.role,
+          supplier_id: form.role === 'supplier' ? form.supplier_id : null
+        });
         push("Account created! Please log in.");
         setTab("login");
       }
@@ -69,7 +82,19 @@ export default function AuthPage({ onLogin, push }) {
                 <option value="staff">Staff</option>
                 <option value="manager">Manager</option>
                 <option value="admin">Admin</option>
+                <option value="supplier">Supplier</option>
               </select>
+
+              {form.role === 'supplier' && (
+                <>
+                  <label style={{ marginTop: "15px" }}>Select Your Company (Supplier)</label>
+                  <select value={form.supplier_id} onChange={set("supplier_id")} style={{ width: "100%", padding: "10px", borderRadius: "8px", background: "var(--bg-base)", border: "1px solid var(--border)", color: "var(--text-primary)" }}>
+                    <option value="">Select Supplier...</option>
+                    {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  </select>
+                  <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 5 }}>If your company isn't listed, please contact the administrator.</div>
+                </>
+              )}
             </>
           )}
         </div>

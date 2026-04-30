@@ -10,6 +10,7 @@ export default function Purchases({ products, onRefreshProducts, push }) {
   const [loading, setLoading] = useState(false);
   const [expandedOrder, setExpandedOrder] = useState(null);
   const [orderItems, setOrderItems] = useState([]);
+  const [quotations, setQuotations] = useState([]);
 
   // Quick Add Product Form
   const [showQuickAdd, setShowQuickAdd] = useState(false);
@@ -30,23 +31,37 @@ export default function Purchases({ products, onRefreshProducts, push }) {
 
   const fetchSuppliers = useCallback(async () => {
     try {
-      const res = await axios.get(`${API}/purchases/suppliers`);
+      const res = await axios.get(`${API}/purchases/suppliers`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("erp_token")}` }
+      });
       setSuppliers(res.data);
     } catch { push("Failed to fetch suppliers", "error"); }
   }, [push]);
 
   const fetchOrders = useCallback(async () => {
     try {
-      const res = await axios.get(`${API}/purchases/orders`);
+      const res = await axios.get(`${API}/purchases/orders`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("erp_token")}` }
+      });
       setOrders(res.data);
     } catch { push("Failed to fetch orders", "error"); }
   }, [push]);
 
+  const fetchQuotations = useCallback(async () => {
+    try {
+      const res = await axios.get(`${API}/quotations`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("erp_token")}` }
+      });
+      setQuotations(res.data);
+    } catch { push("Failed to fetch quotations", "error"); }
+  }, [push]);
+
   const fetchLocations = useCallback(async () => {
     try {
+      const headers = { Authorization: `Bearer ${localStorage.getItem("erp_token")}` };
       const [wRes, bRes] = await Promise.all([
-        axios.get(`${API}/warehouse`),
-        axios.get(`${API}/warehouse/bins`)
+        axios.get(`${API}/warehouse`, { headers }),
+        axios.get(`${API}/warehouse/bins`, { headers })
       ]);
       setWarehouses(wRes.data);
       setBins(bRes.data);
@@ -57,7 +72,8 @@ export default function Purchases({ products, onRefreshProducts, push }) {
     fetchSuppliers();
     fetchLocations();
     fetchOrders();
-  }, [fetchSuppliers, fetchLocations, fetchOrders]);
+    fetchQuotations();
+  }, [fetchSuppliers, fetchLocations, fetchOrders, fetchQuotations]);
 
   const saveSupplier = async () => {
     if (!sForm.name) return push("Supplier name is required", "error");
@@ -127,6 +143,18 @@ export default function Purchases({ products, onRefreshProducts, push }) {
     }
   };
 
+  const updateQuotationStatus = async (id, status) => {
+    try {
+      await axios.put(`${API}/quotations/${id}/status`, { status }, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("erp_token")}` }
+      });
+      push(`Quotation ${status}`);
+      fetchQuotations();
+    } catch (err) {
+      push(err.response?.data?.error || "Error updating quotation", "error");
+    }
+  };
+
   const toggleExpand = async (id) => {
     if (expandedOrder === id) {
       setExpandedOrder(null);
@@ -155,6 +183,7 @@ export default function Purchases({ products, onRefreshProducts, push }) {
     <div className="fade-up">
       <div className="login-tab-row" style={{ marginBottom: 24, justifyContent: "flex-start", gap: 10 }}>
         <button className={`login-tab ${tab === "orders" ? "active" : ""}`} onClick={() => setTab("orders")}>Purchase Orders</button>
+        <button className={`login-tab ${tab === "quotations" ? "active" : ""}`} onClick={() => setTab("quotations")}>Quotations</button>
         <button className={`login-tab ${tab === "suppliers" ? "active" : ""}`} onClick={() => setTab("suppliers")}>Suppliers</button>
       </div>
 
@@ -454,6 +483,72 @@ export default function Purchases({ products, onRefreshProducts, push }) {
                       )}
                     </Fragment>
                   ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      )}
+
+      {tab === "quotations" && (
+        <>
+          <div className="section-header" style={{ marginBottom: 24 }}>
+            <div className="section-title">Supplier Quotations</div>
+          </div>
+          <div className="card">
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Supplier</th>
+                    <th>Product</th>
+                    <th>Qty</th>
+                    <th>Price</th>
+                    <th>Total</th>
+                    <th>Delivery Date</th>
+                    <th>Status</th>
+                    <th>Notes</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {quotations.map(q => (
+                    <tr key={q.id}>
+                      <td style={{ fontSize: 12, color: 'var(--text-muted)' }}>{new Date(q.created_at).toLocaleDateString()}</td>
+                      <td style={{ fontWeight: 600 }}>{q.supplier_name}</td>
+                      <td>{q.product_name}</td>
+                      <td>{q.quantity}</td>
+                      <td>₹{Number(q.unit_price).toLocaleString()}</td>
+                      <td style={{ fontWeight: 700 }}>₹{Number(q.total_amount).toLocaleString()}</td>
+                      <td>
+                        <div style={{ fontSize: 11, fontWeight: 600 }}>{q.expected_delivery ? new Date(q.expected_delivery).toLocaleDateString() : '—'}</div>
+                        <div style={{ fontSize: 9, opacity: 0.6 }}>Valid: {q.valid_until ? new Date(q.valid_until).toLocaleDateString() : '—'}</div>
+                      </td>
+                      <td>
+                        <span className={`pill ${q.status === 'Accepted' ? 'green' : q.status === 'Rejected' ? 'red' : 'blue'}`}>
+                          {q.status}
+                        </span>
+                      </td>
+                      <td style={{ fontSize: 11, maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={q.notes}>
+                        {q.notes || '—'}
+                      </td>
+                      <td>
+                        {q.status === 'Pending' && (
+                          <div style={{ display: 'flex', gap: 5 }}>
+                            <button className="btn btn-primary btn-sm" onClick={() => updateQuotationStatus(q.id, 'Accepted')}>Accept</button>
+                            <button className="btn btn-danger btn-sm" onClick={() => updateQuotationStatus(q.id, 'Rejected')}>Reject</button>
+                          </div>
+                        )}
+                        {q.status === 'Accepted' && (
+                          <button className="btn btn-secondary btn-sm" disabled>Accepted</button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                  {quotations.length === 0 && (
+                    <tr><td colSpan="10" style={{ textAlign: 'center', padding: 40 }}>No quotations received yet.</td></tr>
+                  )}
                 </tbody>
               </table>
             </div>
