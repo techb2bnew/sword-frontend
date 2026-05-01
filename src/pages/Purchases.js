@@ -179,6 +179,21 @@ export default function Purchases({ products, onRefreshProducts, push }) {
     } catch { push("Failed to add item", "error"); }
   };
 
+  const getTimeLeft = (dueDate) => {
+    if (!dueDate) return null;
+    const now = new Date();
+    const due = new Date(dueDate);
+    const diff = due - now;
+    
+    if (diff <= 0) return <span className="pill red">Overdue</span>;
+    
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    
+    if (days > 0) return <span className="pill green">{days}d {hours}h left</span>;
+    return <span className="pill yellow">{hours}h left</span>;
+  };
+
   return (
     <div className="fade-up">
       <div className="login-tab-row" style={{ marginBottom: 24, justifyContent: "flex-start", gap: 10 }}>
@@ -493,55 +508,74 @@ export default function Purchases({ products, onRefreshProducts, push }) {
       {tab === "quotations" && (
         <>
           <div className="section-header" style={{ marginBottom: 24 }}>
-            <div className="section-title">Supplier Quotations</div>
+            <div className="section-title">Supplier Quotations & Automated Allocation</div>
           </div>
           <div className="card">
             <div className="table-wrap">
               <table>
                 <thead>
                   <tr>
-                    <th>Date</th>
+                    <th>Quotation</th>
                     <th>Supplier</th>
                     <th>Product</th>
                     <th>Qty</th>
-                    <th>Price</th>
-                    <th>Total</th>
-                    <th>Delivery Date</th>
+                    <th>Price (₹)</th>
+                    <th>Total (₹)</th>
+                    <th>Allocation (W-R-B)</th>
+                    <th>Barcode</th>
+                    <th>Due Date</th>
+                    <th>Time Left</th>
                     <th>Status</th>
-                    <th>Notes</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {quotations.map(q => (
                     <tr key={q.id}>
-                      <td style={{ fontSize: 12, color: 'var(--text-muted)' }}>{new Date(q.created_at).toLocaleDateString()}</td>
+                      <td>
+                        <div style={{ fontSize: 12, fontWeight: 600 }}>#QT-{q.id}</div>
+                        <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>{new Date(q.created_at).toLocaleDateString()}</div>
+                      </td>
                       <td style={{ fontWeight: 600 }}>{q.supplier_name}</td>
                       <td>{q.product_name}</td>
                       <td>{q.quantity}</td>
-                      <td>₹{Number(q.unit_price).toLocaleString()}</td>
-                      <td style={{ fontWeight: 700 }}>₹{Number(q.total_amount).toLocaleString()}</td>
+                      <td style={{ fontWeight: 600 }}>₹{q.unit_price}</td>
+                      <td style={{ fontWeight: 700, color: 'var(--accent-4)' }}>₹{q.total_amount?.toLocaleString()}</td>
                       <td>
-                        <div style={{ fontSize: 11, fontWeight: 600 }}>{q.expected_delivery ? new Date(q.expected_delivery).toLocaleDateString() : '—'}</div>
-                        <div style={{ fontSize: 9, opacity: 0.6 }}>Valid: {q.valid_until ? new Date(q.valid_until).toLocaleDateString() : '—'}</div>
+                        {q.warehouse_name ? (
+                          <div style={{ fontSize: 12 }}>
+                            <strong>{q.warehouse_name}</strong>
+                            <div style={{ fontSize: 11, opacity: 0.7 }}>{q.rack_code} · {q.bin_code}</div>
+                          </div>
+                        ) : <span style={{ opacity: 0.5 }}>Pending Approval</span>}
                       </td>
+                      <td>
+                        {q.barcode_id ? (
+                          <code style={{ background: 'var(--bg-base)', padding: '2px 6px', borderRadius: 4, fontSize: 11, color: 'var(--accent)' }}>
+                            {q.barcode_id}
+                          </code>
+                        ) : '—'}
+                      </td>
+                      <td>
+                        {q.delivery_due_at ? (
+                          <div style={{ fontSize: 11, fontWeight: 600 }}>{new Date(q.delivery_due_at).toLocaleDateString()}</div>
+                        ) : '—'}
+                      </td>
+                      <td>{getTimeLeft(q.delivery_due_at)}</td>
                       <td>
                         <span className={`pill ${q.status === 'Accepted' ? 'green' : q.status === 'Rejected' ? 'red' : 'blue'}`}>
                           {q.status}
                         </span>
                       </td>
-                      <td style={{ fontSize: 11, maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={q.notes}>
-                        {q.notes || '—'}
-                      </td>
                       <td>
                         {q.status === 'Pending' && (
                           <div style={{ display: 'flex', gap: 5 }}>
-                            <button className="btn btn-primary btn-sm" onClick={() => updateQuotationStatus(q.id, 'Accepted')}>Accept</button>
+                            <button className="btn btn-primary btn-sm" onClick={() => updateQuotationStatus(q.id, 'Accepted')}>Approve</button>
                             <button className="btn btn-danger btn-sm" onClick={() => updateQuotationStatus(q.id, 'Rejected')}>Reject</button>
                           </div>
                         )}
                         {q.status === 'Accepted' && (
-                          <button className="btn btn-secondary btn-sm" disabled>Accepted</button>
+                          <button className="btn btn-secondary btn-sm" disabled>Allocated</button>
                         )}
                       </td>
                     </tr>

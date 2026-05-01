@@ -140,18 +140,45 @@ export default function Warehouse({ products, push }) {
             </Modal>
           )}
 
-          <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))' }}>
+          <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
             {warehouses.map(w => (
-              <div key={w.id} className="stat-card c2">
+              <div 
+                key={w.id} 
+                className="stat-card c2 clickable-card" 
+                onClick={() => {
+                  setSelectedWhId(w.id);
+                  setTab("bins");
+                }}
+                style={{ 
+                  cursor: 'pointer', 
+                  transition: 'transform 0.2s, box-shadow 0.2s',
+                  position: 'relative',
+                  overflow: 'hidden'
+                }}
+              >
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 15 }}>
                   <div className="stat-icon i2">🏠</div>
                   <span className="pill green">{w.status}</span>
                 </div>
                 <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 5 }}>{w.name}</div>
                 <div style={{ fontSize: 12, opacity: 0.6, marginBottom: 15 }}>{w.location}</div>
-                <div style={{ borderTop: '1px solid var(--border)', paddingTop: 10, display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
+                
+                <div style={{ borderTop: '1px solid var(--border)', paddingTop: 10, display: 'flex', justifyContent: 'space-between', fontSize: 11, marginBottom: 10 }}>
                   <span>Manager: {w.manager_name}</span>
                   <span>Cap: {w.capacity_sqft}sqft</span>
+                </div>
+
+                <div style={{ display: 'flex', gap: 5, fontSize: 10, fontWeight: 600 }}>
+                  <span className="pill blue" style={{ padding: '2px 8px' }}>
+                    {bins.filter(b => b.warehouse_id === w.id).length} Bins
+                  </span>
+                  <span className="pill purple" style={{ padding: '2px 8px' }}>
+                    {bins.filter(b => b.warehouse_id === w.id && b.status === 'Occupied').length} Occupied
+                  </span>
+                </div>
+                
+                <div className="card-hover-hint" style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'var(--accent-1)', color: 'white', fontSize: 10, textAlign: 'center', padding: '2px 0', opacity: 0, transition: 'opacity 0.2s' }}>
+                  Click to view layout
                 </div>
               </div>
             ))}
@@ -171,6 +198,9 @@ export default function Warehouse({ products, push }) {
                 Available: {bins.filter(b => (!selectedWhId || b.warehouse_id === selectedWhId) && b.status === 'Empty').length}
               </div>
               <div className="pill yellow" style={{ padding: '8px 15px' }}>
+                Allocated/Reserved: {bins.filter(b => (!selectedWhId || b.warehouse_id === selectedWhId) && b.status === 'Reserved').length}
+              </div>
+              <div className="pill purple" style={{ padding: '8px 15px' }}>
                 Occupied: {bins.filter(b => (!selectedWhId || b.warehouse_id === selectedWhId) && b.status === 'Occupied').length}
               </div>
             </div>
@@ -204,15 +234,33 @@ export default function Warehouse({ products, push }) {
                     {warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
                   </select>
                 </div>
-                <div className="form-group">
-                  <label>Rack Code (e.g. R-10)</label>
-                  <input placeholder="e.g. R-5" value={rForm.rack_code} onChange={e => setRForm({...rForm, rack_code: e.target.value})} />
+                <div className="form-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
+                  <div className="form-group">
+                    <label>Rack Code (e.g. R-10)</label>
+                    <input placeholder="e.g. R-5" value={rForm.rack_code} onChange={e => setRForm({...rForm, rack_code: e.target.value})} />
+                  </div>
+                  <div className="form-group">
+                    <label>Prototype Category</label>
+                    <select value={rForm.category} onChange={e => setRForm({...rForm, category: e.target.value})} style={{ width: '100%', padding: 10, borderRadius: 8, background: 'var(--bg-base)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
+                      <option value="">No Category</option>
+                      <option value="cocacola">Coca-Cola</option>
+                      <option value="chips">Chips</option>
+                      <option value="spices">Spices</option>
+                      <option value="biscuits">Biscuits</option>
+                    </select>
+                  </div>
                 </div>
-                <div className="form-group">
-                  <label>Number of Bins to Create</label>
-                  <input type="number" min="1" max="50" value={rForm.bin_count} onChange={e => setRForm({...rForm, bin_count: parseInt(e.target.value)})} />
-                  <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 5 }}>Each bin will be named automatically (B-01, B-02, etc.)</div>
+                <div className="form-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
+                  <div className="form-group">
+                    <label>Bins to Create</label>
+                    <input type="number" min="1" max="50" value={rForm.bin_count} onChange={e => setRForm({...rForm, bin_count: parseInt(e.target.value)})} />
+                  </div>
+                  <div className="form-group">
+                    <label>Bin Capacity (kg/units)</label>
+                    <input type="number" placeholder="e.g. 5000" value={rForm.capacity} onChange={e => setRForm({...rForm, capacity: parseInt(e.target.value)})} />
+                  </div>
                 </div>
+                <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 5 }}>Each bin will be named automatically (B-01, B-02, etc.)</div>
               </div>
             </Modal>
           )}
@@ -227,6 +275,7 @@ export default function Warehouse({ products, push }) {
                 <div key={rack} style={{ flex: '1 1 350px', minWidth: 350, background: 'var(--bg-surface)', padding: 20, borderRadius: 16, border: '1px solid var(--border)' }}>
                   <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 15, display: 'flex', alignItems: 'center', gap: 10 }}>
                     <span className="pill purple" style={{ padding: '4px 12px' }}>Rack: {rack}</span>
+                    {firstBin?.category && <span className="pill blue" style={{ padding: '4px 12px', fontSize: 10 }}>{firstBin.category.toUpperCase()}</span>}
                     <div style={{ flex: 1, height: 1, background: 'var(--border)' }}></div>
                     <div style={{ display: 'flex', gap: 5 }}>
                       <button 
@@ -251,14 +300,15 @@ export default function Warehouse({ products, push }) {
                       .map(bin => (
                       <div 
                         key={bin.id} 
-                        className={`card ${bin.status === 'Occupied' ? 'occupied' : 'empty'}`}
+                        className={`card ${bin.status === 'Occupied' ? 'occupied' : 'empty'} ${bin.status === 'Occupied' && bin.product_stock <= 5 ? 'low-stock-blink' : ''}`}
                         style={{ 
                           padding: 12, 
                           border: '1px solid var(--border)', 
                           background: bin.status === 'Occupied' ? 'rgba(99, 102, 241, 0.05)' : 'var(--bg-surface)',
                           cursor: 'pointer',
                           transition: 'all 0.2s',
-                          borderRadius: 12
+                          borderRadius: 12,
+                          position: 'relative'
                         }}
                         onClick={() => {
                           setTForm({ ...tForm, to_bin_id: bin.id, to_warehouse_id: bin.warehouse_id });
@@ -267,13 +317,26 @@ export default function Warehouse({ products, push }) {
                       >
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
                           <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)' }}>{bin.bin_code}</div>
-                          <div className={`status-dot ${bin.status === 'Occupied' ? 'active' : ''}`} style={{ width: 8, height: 8, borderRadius: '50%', background: bin.status === 'Occupied' ? '#10b981' : '#cbd5e1' }}></div>
+                          <div 
+                            className={`status-dot ${bin.status !== 'Empty' ? 'active' : ''}`} 
+                            style={{ 
+                              width: 8, 
+                              height: 8, 
+                              borderRadius: '50%', 
+                              background: bin.status === 'Occupied' ? '#10b981' : bin.status === 'Reserved' ? '#f59e0b' : '#cbd5e1' 
+                            }}
+                          ></div>
                         </div>
                         
-                        {bin.status === 'Occupied' ? (
+                        {bin.status !== 'Empty' ? (
                           <>
-                            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--accent-1)', marginBottom: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{bin.product_name}</div>
-                            <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>Qty: {bin.product_stock} {bin.uom}</div>
+                            <div style={{ fontSize: 13, fontWeight: 600, color: bin.status === 'Occupied' ? 'var(--accent-1)' : '#f59e0b', marginBottom: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {bin.product_name || "Reserved Item"}
+                            </div>
+                            <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>
+                              {bin.status === 'Reserved' ? 'Pre-allocated' : `Qty: ${bin.product_stock} ${bin.uom}`}
+                            </div>
+                            <div style={{ fontSize: 9, marginTop: 4, color: 'var(--text-muted)', fontWeight: 600 }}>{bin.status.toUpperCase()}</div>
                           </>
                         ) : (
                           <div style={{ fontSize: 11, color: 'var(--text-muted)', fontStyle: 'italic' }}>Empty - Click to Assign</div>

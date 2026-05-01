@@ -24,8 +24,8 @@ export default function Sidebar({ activeModule, setActiveModule, user, onLogout 
   return (
     <aside className="sidebar">
       <div className="sidebar-logo">
-        <div className="sidebar-logo-icon">S</div>
-        <div className="sidebar-logo-text">SWORD<span>ERP</span></div>
+        <div className="sidebar-logo-icon">G</div>
+        <div className="sidebar-logo-text">GYRO<span>FOODS</span></div>
       </div>
 
       <div className="sidebar-section">

@@ -51,8 +51,8 @@ export default function AuthPage({ onLogin, push }) {
       
       <div className="login-card fade-up">
         <div className="login-logo">
-          <div className="login-logo-icon">S</div>
-          <div className="login-logo-text">SWORD<span>ERP</span></div>
+          <div className="login-logo-icon">G</div>
+          <div className="login-logo-text">GYRO<span>FOODS</span></div>
         </div>
 
         <div className="login-tab-row">

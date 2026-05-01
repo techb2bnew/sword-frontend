@@ -46,7 +46,7 @@ export default function SupplierQuotations({ products, push }) {
       });
       push("Quotation submitted successfully!");
       setShowModal(false);
-      setForm({ product_id: "", quantity: "", unit_price: "", valid_until: "", expected_delivery: "", notes: "" });
+      setForm({ product_id: "", quantity: "", unit_price: "", valid_until: "", expected_delivery: "", notes: "", credit_days: "" });
       fetchQuotations();
     } catch (err) {
       push("Failed to submit quotation", "error");
@@ -110,6 +110,10 @@ export default function SupplierQuotations({ products, push }) {
               </div>
             </div>
             <div className="form-group">
+              <label>Credit Days (Post-acceptance)</label>
+              <input type="number" placeholder="e.g. 7" value={form.credit_days} onChange={(e) => setForm({...form, credit_days: e.target.value})} />
+            </div>
+            <div className="form-group">
               <label>Notes / Terms</label>
               <textarea rows="3" value={form.notes} onChange={(e) => setForm({...form, notes: e.target.value})} style={{ width: '100%', padding: 10, borderRadius: 8, background: 'var(--bg-base)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}></textarea>
             </div>
@@ -127,6 +131,7 @@ export default function SupplierQuotations({ products, push }) {
                 <th>Qty</th>
                 <th>Price</th>
                 <th>Total</th>
+                <th>Credit Days</th>
                 <th>Delivery</th>
                 <th>Status</th>
                 <th>Notes</th>
@@ -144,6 +149,7 @@ export default function SupplierQuotations({ products, push }) {
                   <td>{q.quantity}</td>
                   <td>₹{Number(q.unit_price).toLocaleString()}</td>
                   <td style={{ fontWeight: 600 }}>₹{Number(q.total_amount).toLocaleString()}</td>
+                  <td>{q.credit_days} days</td>
                   <td>
                     <div style={{ fontSize: 11, fontWeight: 600 }}>{q.expected_delivery ? new Date(q.expected_delivery).toLocaleDateString() : '—'}</div>
                     <div style={{ fontSize: 9, opacity: 0.6 }}>Valid: {q.valid_until ? new Date(q.valid_until).toLocaleDateString() : '—'}</div>
@@ -156,7 +162,7 @@ export default function SupplierQuotations({ products, push }) {
               ))}
               {quotations.length === 0 && !loading && (
                 <tr>
-                  <td colSpan="7" style={{ textAlign: 'center', padding: 40 }}>
+                  <td colSpan="9" style={{ textAlign: 'center', padding: 40 }}>
                     No quotations found.
                   </td>
                 </tr>
