@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { API } from "../config";
 import Modal from "../components/Modal";
+import MapPicker from "../components/MapPicker";
+import RouteViewer from "../components/RouteViewer";
 
 export default function Transport({ push }) {
   const [tab, setTab] = useState("shipments");
@@ -13,9 +15,50 @@ export default function Transport({ push }) {
   const [showVModal, setShowVModal] = useState(false);
   const [vForm, setVForm] = useState({ plate_number: "", vehicle_type: "", capacity: "", driver_name: "" });
 
+  const [originName, setOriginName] = useState("Loading...");
+  const [destinationName, setDestinationName] = useState("Loading...");
+
   // Shipment Form
   const [showSModal, setShowSModal] = useState(false);
-  const [sForm, setSForm] = useState({ order_id: "", vehicle_id: "", route_details: "", estimated_delivery: "" });
+  const [sForm, setSForm] = useState({ 
+    order_id: "", 
+    vehicle_id: "", 
+    route_details: "", 
+    estimated_delivery: "",
+    origin_lat: null,
+    origin_lng: null,
+    dest_lat: null,
+    dest_lng: null,
+    distance_km: 0
+  });
+
+  // Map Viewer Modal
+  const [selectedShipment, setSelectedShipment] = useState(null);
+    const [calculatedDistance, setCalculatedDistance] = useState(
+    selectedShipment?.distance_km || 0
+  );
+
+  useEffect(() => {
+    if (!selectedShipment) return;
+
+    const loadLocations = async () => {
+      const fromLocation = await getLocationName(
+        selectedShipment.origin_lat,
+        selectedShipment.origin_lng
+      );
+
+      const toLocation = await getLocationName(
+        selectedShipment.dest_lat,
+        selectedShipment.dest_lng
+      );
+
+      setOriginName(fromLocation);
+      setDestinationName(toLocation);
+    };
+
+    loadLocations();
+  }, [selectedShipment]);
+
 
   const fetchData = useCallback(async () => {
     try {
@@ -29,6 +72,29 @@ export default function Transport({ push }) {
   }, [push]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  
+
+    const getLocationName = async (lat, lng) => {
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`
+      );
+
+      const data = await response.json();
+
+      return (
+        data?.address?.road ||
+        data?.address?.suburb ||
+        data?.address?.city ||
+        data?.display_name ||
+        "Unknown Location"
+      );
+    } catch (error) {
+      console.error("Location fetch error:", error);
+      return "Unknown Location";
+    }
+  };
 
   const addVehicle = async () => {
     if (!vForm.plate_number) return push("Plate number is required", "error");
@@ -45,11 +111,16 @@ export default function Transport({ push }) {
 
   const createShipment = async () => {
     if (!sForm.vehicle_id || !sForm.order_id) return push("Vehicle and Order ID are required", "error");
+    if (!sForm.origin_lat || !sForm.dest_lat) return push("Please select route on map", "error");
+    
     setLoading(true);
     try {
       await axios.post(`${API}/transport/shipments`, sForm);
       push("Shipment dispatched!");
-      setSForm({ order_id: "", vehicle_id: "", route_details: "", estimated_delivery: "" });
+      setSForm({ 
+        order_id: "", vehicle_id: "", route_details: "", estimated_delivery: "",
+        origin_lat: null, origin_lng: null, dest_lat: null, dest_lng: null, distance_km: 0
+      });
       setShowSModal(false);
       fetchData();
     } catch { push("Error dispatching shipment", "error"); }
@@ -122,7 +193,13 @@ export default function Transport({ push }) {
           {showSModal && (
             <Modal title="Dispatch Shipment" onClose={() => setShowSModal(false)} onConfirm={createShipment} loading={loading}>
               <div className="form-grid" style={{ gridTemplateColumns: '1fr' }}>
-                <div className="form-group"><label>Order Reference #</label><input value={sForm.order_id} onChange={e => setSForm({...sForm, order_id: e.target.value})} placeholder="e.g. SO-1042" /></div>
+                <div className="form-group"><label>Select Route & Calculate Distance</label>
+                  <MapPicker onSelect={(data) => setSForm(prev => ({...prev, ...data}))} />
+                </div>
+                <div className="form-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
+                  <div className="form-group"><label>Order Reference #</label><input value={sForm.order_id} onChange={e => setSForm({...sForm, order_id: e.target.value})} placeholder="e.g. SO-1042" /></div>
+                  <div className="form-group"><label>Distance (kms)</label><input value={sForm.distance_km} readOnly style={{ background: 'var(--bg-card)' }} /></div>
+                </div>
                 <div className="form-group">
                   <label>Assign Vehicle</label>
                   <select value={sForm.vehicle_id} onChange={e => setSForm({...sForm, vehicle_id: e.target.value})} style={{ width: '100%', padding: 10, borderRadius: 8, background: 'var(--bg-base)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
@@ -132,28 +209,65 @@ export default function Transport({ push }) {
                     ))}
                   </select>
                 </div>
-                <div className="form-group"><label>Route & Navigation Details</label><textarea value={sForm.route_details} onChange={e => setSForm({...sForm, route_details: e.target.value})} placeholder="Enter route steps or destination..." style={{ width: '100%', padding: 10, borderRadius: 8, background: 'var(--bg-base)', border: '1px solid var(--border)', color: 'var(--text-primary)', minHeight: 80 }} /></div>
+                <div className="form-group"><label>Navigation Notes</label><textarea value={sForm.route_details} onChange={e => setSForm({...sForm, route_details: e.target.value})} placeholder="Enter delivery instructions..." style={{ width: '100%', padding: 10, borderRadius: 8, background: 'var(--bg-base)', border: '1px solid var(--border)', color: 'var(--text-primary)', minHeight: 60 }} /></div>
                 <div className="form-group"><label>Est. Delivery Date</label><input type="date" value={sForm.estimated_delivery} onChange={e => setSForm({...sForm, estimated_delivery: e.target.value})} /></div>
               </div>
             </Modal>
           )}
 
+         {selectedShipment && (
+  <Modal
+    title={`Navigation: Shipment #SHP-${selectedShipment.id}`}
+    onClose={() => setSelectedShipment(null)}
+    hideConfirm
+  >
+    <RouteViewer
+      shipment={selectedShipment}
+      onDistanceChange={(distanceKm) => {
+        setCalculatedDistance(distanceKm);
+      }}
+    />
+
+    <div
+      style={{
+        marginTop: 16,
+        display: "flex",
+        justifyContent: "space-between",
+      }}
+    >
+      <div>
+        <strong>From:</strong> {originName}
+      </div>
+
+      <div>
+        <strong>To:</strong> {destinationName}
+      </div>
+
+      <div>
+        <strong>Total Distance:</strong> {calculatedDistance} km
+      </div>
+    </div>
+  </Modal>
+)}
+
           <div className="card">
             <div className="table-wrap">
               <table>
-                <thead><tr><th>Shipment ID</th><th>Order #</th><th>Vehicle</th><th>Driver</th><th>Route</th><th>Status</th><th>Actions</th></tr></thead>
+                <thead><tr><th>Shipment ID</th><th>Order #</th><th>Vehicle</th><th>Distance</th><th>Status</th><th>Actions</th></tr></thead>
                 <tbody>
                   {shipments.map(s => (
                     <tr key={s.id}>
                       <td style={{ color: "var(--accent)", fontWeight: 700 }}>#SHP-{s.id}</td>
                       <td>{s.order_id}</td>
-                      <td>{s.plate_number}</td>
-                      <td>{s.driver_name}</td>
-                      <td title={s.route_details}>{s.route_details?.substring(0, 20)}...</td>
+                      <td>{s.plate_number} <br/><small style={{color:'var(--text-secondary)'}}>{s.driver_name}</small></td>
+                      <td>{s.distance_km ? `${s.distance_km} km` : 'N/A'}</td>
                       <td><span className={`pill ${s.status === 'Pending' ? 'yellow' : s.status === 'In Transit' ? 'cyan' : 'green'}`}>{s.status}</span></td>
                       <td>
-                        {s.status === 'Pending' && <button className="btn btn-secondary btn-sm" onClick={() => updateStatus(s.id, 'In Transit')}>Start Trip</button>}
-                        {s.status === 'In Transit' && <button className="btn btn-primary btn-sm" onClick={() => updateStatus(s.id, 'Delivered')}>Mark Delivered</button>}
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          <button className="btn btn-secondary btn-sm" onClick={() => setSelectedShipment(s)}>📍 Map</button>
+                          {s.status === 'Pending' && <button className="btn btn-secondary btn-sm" onClick={() => updateStatus(s.id, 'In Transit')}>Start</button>}
+                          {s.status === 'In Transit' && <button className="btn btn-primary btn-sm" onClick={() => updateStatus(s.id, 'Delivered')}>Finish</button>}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -166,3 +280,4 @@ export default function Transport({ push }) {
     </div>
   );
 }
+

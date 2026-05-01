@@ -43,27 +43,55 @@ export default function Inventory({ products, onRefresh, push, user }) {
   };
 
   const handleSave = async () => {
-    if (!form.name || !form.price) {
-      push("Name and Price are required", "error");
-      return;
+  if (!form.name || !form.price) {
+    push("Name and Price are required", "error");
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    const token = localStorage.getItem("erp_token"); 
+    // agar authToken ya accessToken naam se store hai toh wahi use karo
+
+    const config = {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    };
+
+    if (editId) {
+      await axios.put(
+        `${API}/inventory/products/${editId}`,
+        form,
+        config
+      );
+
+      push("Product updated successfully!");
+    } else {
+      await axios.post(
+        `${API}/inventory/products`,
+        form,
+        config
+      );
+
+      push("Product added successfully!");
     }
-    setLoading(true);
-    try {
-      if (editId) {
-        await axios.put(`${API}/inventory/products/${editId}`, form);
-        push("Product updated successfully!");
-      } else {
-        await axios.post(`${API}/inventory/products`, form);
-        push("Product added successfully!");
-      }
-      resetForm();
-      await onRefresh();
-    } catch {
-      push(`Failed to ${editId ? "update" : "add"} product`, "error");
-    } finally {
-      setLoading(false);
-    }
-  };
+
+    resetForm();
+    await onRefresh();
+
+  } catch (error) {
+    console.error("Save error:", error);
+
+    push(
+      `Failed to ${editId ? "update" : "add"} product`,
+      "error"
+    );
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleEdit = (p) => {
     setEditId(p.id);
@@ -114,7 +142,8 @@ export default function Inventory({ products, onRefresh, push, user }) {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          {user.role !== 'supplier' && <button className="btn btn-primary" onClick={() => setShowModal(true)}>＋ Add New Product</button>}
+          {/* {user.role !== 'supplier' && <button className="btn btn-primary" onClick={() => setShowModal(true)}>＋ Add New Product</button>} */}
+          {<button className="btn btn-primary" onClick={() => setShowModal(true)}>＋ Add New Product</button>}
         </div>
       </div>
 
@@ -272,7 +301,17 @@ export default function Inventory({ products, onRefresh, push, user }) {
                     )}
                     {user.role !== 'supplier' && <td>{getStockPill(p.stock)}</td>}
                     <td style={{ textAlign: "right" }}>
-                      {user.role !== 'supplier' && (
+                      {/* {user.role !== 'supplier' && (
+                        <>
+                          <button className="btn btn-secondary btn-sm" onClick={() => handleEdit(p)} style={{ padding: "5px 10px", fontSize: 12, marginRight: 5 }}>
+                            Edit
+                          </button>
+                          <button className="btn btn-danger btn-sm" onClick={() => confirmDelete(p.id)} style={{ padding: "5px 10px", fontSize: 12 }}>
+                            Delete
+                          </button>
+                        </>
+                      )} */}
+                       {(
                         <>
                           <button className="btn btn-secondary btn-sm" onClick={() => handleEdit(p)} style={{ padding: "5px 10px", fontSize: 12, marginRight: 5 }}>
                             Edit
@@ -282,11 +321,11 @@ export default function Inventory({ products, onRefresh, push, user }) {
                           </button>
                         </>
                       )}
-                      {user.role === 'supplier' && (
+                      {/* {user.role === 'supplier' && (
                         <button className="btn btn-secondary btn-sm" disabled style={{ padding: "5px 10px", fontSize: 12, opacity: 0.5 }}>
                           Read Only
                         </button>
-                      )}
+                      )} */}
                     </td>
                   </tr>
                 ))}
