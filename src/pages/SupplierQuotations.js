@@ -95,7 +95,7 @@ export default function SupplierQuotations({ products, push }) {
                 <input type="number" value={form.quantity} onChange={(e) => setForm({...form, quantity: e.target.value})} />
               </div>
               <div className="form-group">
-                <label>Unit Price (₹)</label>
+                <label>Unit Price (£)</label>
                 <input type="number" value={form.unit_price} onChange={(e) => setForm({...form, unit_price: e.target.value})} />
               </div>
             </div>
@@ -147,8 +147,8 @@ export default function SupplierQuotations({ products, push }) {
                     <div style={{ fontWeight: 600 }}>{q.product_name}</div>
                   </td>
                   <td>{q.quantity}</td>
-                  <td>₹{Number(q.unit_price).toLocaleString()}</td>
-                  <td style={{ fontWeight: 600 }}>₹{Number(q.total_amount).toLocaleString()}</td>
+                  <td>£{Number(q.unit_price).toLocaleString()}</td>
+                  <td style={{ fontWeight: 600 }}>£{Number(q.total_amount).toLocaleString()}</td>
                   <td>{q.credit_days} days</td>
                   <td>
                     <div style={{ fontSize: 11, fontWeight: 600 }}>{q.expected_delivery ? new Date(q.expected_delivery).toLocaleDateString() : '—'}</div>

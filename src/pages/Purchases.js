@@ -76,21 +76,26 @@ export default function Purchases({ products, onRefreshProducts, push }) {
   }, [fetchSuppliers, fetchLocations, fetchOrders, fetchQuotations]);
 
   const saveSupplier = async () => {
-    if (!sForm.name) return push("Supplier name is required", "error");
+    if (!sForm.name?.trim()) return push("Supplier name is required", "error");
     setLoading(true);
     try {
+      const headers = { Authorization: `Bearer ${localStorage.getItem("erp_token")}` };
       if (editSId) {
-        await axios.put(`${API}/purchases/suppliers/${editSId}`, sForm);
-        push("Supplier updated!");
+        await axios.put(`${API}/purchases/suppliers/${editSId}`, sForm, { headers });
+        push("✓ Supplier updated successfully", "success");
       } else {
-        await axios.post(`${API}/purchases/suppliers`, sForm);
-        push("Supplier added!");
+        await axios.post(`${API}/purchases/suppliers`, sForm, { headers });
+        push("✓ Supplier added successfully", "success");
       }
       setSForm({ name: "", contact_person: "", email: "", phone: "", address: "" });
       setEditSId(null);
       setShowSModal(false);
       fetchSuppliers();
-    } catch { push("Error saving supplier", "error"); }
+    } catch (err) { 
+      const errorMsg = err.response?.data?.error || err.message;
+      console.error("Supplier save error:", errorMsg);
+      push(`❌ Failed to save supplier: ${errorMsg}`, "error");
+    }
     finally { setLoading(false); }
   };
 
@@ -102,11 +107,16 @@ export default function Purchases({ products, onRefreshProducts, push }) {
   const deleteSupplier = async () => {
     setLoading(true);
     try {
-      await axios.delete(`${API}/purchases/suppliers/${sDeleteId}`);
-      push("Supplier deleted!");
+      const headers = { Authorization: `Bearer ${localStorage.getItem("erp_token")}` };
+      await axios.delete(`${API}/purchases/suppliers/${sDeleteId}`, { headers });
+      push("✓ Supplier deleted successfully", "success");
       setShowSDeleteModal(false);
       fetchSuppliers();
-    } catch { push("Error deleting supplier", "error"); }
+    } catch (err) {
+      const errorMsg = err.response?.data?.error || err.message;
+      console.error("Supplier delete error:", errorMsg);
+      push(`❌ Failed to delete supplier: ${errorMsg}`, "error");
+    }
     finally { setLoading(false); }
   };
 
@@ -217,14 +227,56 @@ export default function Purchases({ products, onRefreshProducts, push }) {
               loading={loading}
               confirmText={editSId ? "Update Supplier" : "Save Supplier"}
             >
-              <div className="form-grid" style={{ gridTemplateColumns: '1fr' }}>
-                <div className="form-group"><label>Supplier Name</label><input value={sForm.name} onChange={e => setSForm({...sForm, name: e.target.value})} /></div>
-                <div className="form-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
-                  <div className="form-group"><label>Contact Person</label><input value={sForm.contact_person} onChange={e => setSForm({...sForm, contact_person: e.target.value})} /></div>
-                  <div className="form-group"><label>Phone</label><input value={sForm.phone} onChange={e => setSForm({...sForm, phone: e.target.value})} /></div>
+              <div className="form-grid" style={{ gridTemplateColumns: '1fr', gap: '16px' }}>
+                <div className="form-group">
+                  <label>Supplier Name *</label>
+                  <input 
+                    value={sForm.name} 
+                    onChange={e => setSForm({...sForm, name: e.target.value})} 
+                    placeholder="e.g. ABC Trading Company"
+                    required
+                  />
                 </div>
-                <div className="form-group"><label>Email</label><input value={sForm.email} onChange={e => setSForm({...sForm, email: e.target.value})} /></div>
-                <div className="form-group"><label>Address</label><textarea value={sForm.address} onChange={e => setSForm({...sForm, address: e.target.value})} style={{ width: '100%', background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: 8, padding: 10, color: 'var(--text-main)', minHeight: 80 }} /></div>
+                <div className="form-grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <div className="form-group">
+                    <label>Contact Person</label>
+                    <input 
+                      value={sForm.contact_person} 
+                      onChange={e => setSForm({...sForm, contact_person: e.target.value})} 
+                      placeholder="Full name"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Phone</label>
+                    <input 
+                      value={sForm.phone} 
+                      onChange={e => setSForm({...sForm, phone: e.target.value})} 
+                      placeholder="Phone number"
+                      type="tel"
+                    />
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label>Email</label>
+                  <input 
+                    value={sForm.email} 
+                    onChange={e => setSForm({...sForm, email: e.target.value})} 
+                    placeholder="supplier@example.com"
+                    type="email"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Address</label>
+                  <textarea 
+                    value={sForm.address} 
+                    onChange={e => setSForm({...sForm, address: e.target.value})} 
+                    placeholder="Complete business address"
+                    style={{ width: '100%', background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: 8, padding: 10, color: 'var(--text-main)', minHeight: 80, fontFamily: 'inherit' }} 
+                  />
+                </div>
+              </div>
+              <div style={{ marginTop: 16, padding: '10px 12px', background: 'rgba(99, 102, 241, 0.05)', borderRadius: 6, fontSize: 12, borderLeft: '3px solid var(--accent)' }}>
+                * Required field
               </div>
             </Modal>
           )}
@@ -302,7 +354,7 @@ export default function Purchases({ products, onRefreshProducts, push }) {
                     
                     <div className="form-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
                       <div className="form-group">
-                        <label>Standard Price (₹)</label>
+                        <label>Standard Price (£)</label>
                         <input type="number" placeholder="Price" value={qaForm.price} onChange={e => setQaForm({...qaForm, price: e.target.value})} />
                       </div>
                       <div className="form-group">
@@ -413,7 +465,7 @@ export default function Purchases({ products, onRefreshProducts, push }) {
                 </div>
 
                 <div className="form-group">
-                  <label>Unit Price (₹)</label>
+                  <label>Unit Price (£)</label>
                   <input
                     type="number"
                     placeholder="Price"
@@ -434,7 +486,7 @@ export default function Purchases({ products, onRefreshProducts, push }) {
               <div className="po-items-list" style={{ marginTop: 15 }}>
                 {poForm.items.map((item, i) => (
                   <div key={i} className="pill blue" style={{ marginRight: 10, marginBottom: 10, padding: '8px 15px' }}>
-                    {item.product_name} x {item.quantity} · ₹{item.unit_price * item.quantity}
+                    {item.product_name} x {item.quantity} · £{item.unit_price * item.quantity}
                     <span style={{ marginLeft: 10, cursor: 'pointer', opacity: 0.6 }} onClick={() => setPoForm(p => ({ ...p, items: p.items.filter((_, idx) => idx !== i) }))}>✕</span>
                   </div>
                 ))}
@@ -442,7 +494,7 @@ export default function Purchases({ products, onRefreshProducts, push }) {
 
               {poForm.items.length > 0 && (
                 <div style={{ marginTop: 20, borderTop: '1px solid var(--border)', paddingTop: 15, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ fontSize: 16, fontWeight: 700 }}>Total: ₹{poForm.items.reduce((sum, item) => sum + (item.quantity * item.unit_price), 0).toLocaleString()}</div>
+                  <div style={{ fontSize: 16, fontWeight: 700 }}>Total: £{poForm.items.reduce((sum, item) => sum + (item.quantity * item.unit_price), 0).toLocaleString()}</div>
                   <button className="btn btn-primary" onClick={createOrder} disabled={loading}>{loading ? "Creating..." : "Create Purchase Order"}</button>
                 </div>
               )}
@@ -460,7 +512,7 @@ export default function Purchases({ products, onRefreshProducts, push }) {
                         <td style={{ color: "#a5b4fc", fontWeight: 600 }}>#PO-{o.id}</td>
                         <td>{o.supplier_name}</td>
                         <td>{new Date(o.order_date).toLocaleDateString()}</td>
-                        <td style={{ color: "#10b981", fontWeight: 600 }}>₹{Number(o.total_amount).toLocaleString()}</td>
+                        <td style={{ color: "#10b981", fontWeight: 600 }}>£{Number(o.total_amount).toLocaleString()}</td>
                         <td><span className={`pill ${o.status === 'Draft' ? 'yellow' : o.status === 'Received' ? 'green' : 'cyan'}`}>{o.status}</span></td>
                         <td>
                           <button className="btn btn-secondary btn-sm" onClick={() => toggleExpand(o.id)} style={{ marginRight: 5 }}>
@@ -485,8 +537,8 @@ export default function Purchases({ products, onRefreshProducts, push }) {
                                       <tr key={item.id} style={{ background: 'transparent' }}>
                                         <td>{item.product_name}</td>
                                         <td>{item.quantity} <span style={{ fontSize: 10, opacity: 0.7 }}>{item.uom || ''}</span></td>
-                                        <td>₹{item.unit_price}</td>
-                                        <td>₹{item.quantity * item.unit_price}</td>
+                                        <td>£{item.unit_price}</td>
+                                        <td>£{item.quantity * item.unit_price}</td>
                                       </tr>
                                     ))}
                                   </tbody>
@@ -519,8 +571,8 @@ export default function Purchases({ products, onRefreshProducts, push }) {
                     <th>Supplier</th>
                     <th>Product</th>
                     <th>Qty</th>
-                    <th>Price (₹)</th>
-                    <th>Total (₹)</th>
+                    <th>Price (£)</th>
+                    <th>Total (£)</th>
                     <th>Allocation (W-R-B)</th>
                     <th>Barcode</th>
                     <th>Due Date</th>
@@ -539,8 +591,8 @@ export default function Purchases({ products, onRefreshProducts, push }) {
                       <td style={{ fontWeight: 600 }}>{q.supplier_name}</td>
                       <td>{q.product_name}</td>
                       <td>{q.quantity}</td>
-                      <td style={{ fontWeight: 600 }}>₹{q.unit_price}</td>
-                      <td style={{ fontWeight: 700, color: 'var(--accent-4)' }}>₹{q.total_amount?.toLocaleString()}</td>
+                      <td style={{ fontWeight: 600 }}>£{q.unit_price}</td>
+                      <td style={{ fontWeight: 700, color: 'var(--accent-4)' }}>£{q.total_amount?.toLocaleString()}</td>
                       <td>
                         {q.allocations && q.allocations.length > 0 ? (
                           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>

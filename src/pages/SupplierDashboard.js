@@ -110,8 +110,8 @@ export default function SupplierDashboard({ user, products, push, setActiveModul
                     <tr key={q.id}>
                       <td>{q.product_name}</td>
                       <td>{q.quantity}</td>
-                      <td>₹{Number(q.unit_price).toLocaleString()}</td>
-                      <td style={{ fontWeight: 600 }}>₹{Number(q.total_amount).toLocaleString()}</td>
+                      <td>£{Number(q.unit_price).toLocaleString()}</td>
+                      <td style={{ fontWeight: 600 }}>£{Number(q.total_amount).toLocaleString()}</td>
                       <td>{getStatusPill(q.status)}</td>
                     </tr>
                   ))}

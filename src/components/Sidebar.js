@@ -26,9 +26,16 @@ export default function Sidebar({ activeModule, setActiveModule, user, onLogout 
     { id: "profile", label: "My Profile", icon: "👤" },
   ];
 
+  const buyerMenu = [
+    { id: "buyer-dashboard", label: "Buyer Dashboard", icon: "🤝" },
+    { id: "buyer-suppliers", label: "My Suppliers", icon: "🏢" },
+    // { id: "buyer-quotations", label: "Quotations", icon: "📄" },
+    { id: "inventory", label: "Inventory", icon: "📦" },
+  ];
 
 
-  const menu = user?.role === 'supplier' ? supplierMenu : user?.role === 'customer' ? customerMenu : adminMenu;
+
+  const menu = user?.role === 'supplier' ? supplierMenu : user?.role === 'customer' ? customerMenu : user?.role === 'buyer' ? buyerMenu : adminMenu;
 
   return (
     <aside className="sidebar">

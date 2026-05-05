@@ -4,7 +4,7 @@ import { API } from "../config";
 import Modal from "../components/Modal";
 
 export default function Finance({ push }) {
-  const [stats, setStats] = useState({ cashOnHand: "₹0", receivables: "₹0", payables: "₹0", netProfit: "₹0" });
+  const [stats, setStats] = useState({ cashOnHand: "£0", receivables: "£0", payables: "£0", netProfit: "£0" });
   const [ledger, setLedger] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -114,7 +114,7 @@ export default function Finance({ push }) {
                     <div style={{ fontWeight: 700 }}>{l.description}</div>
                   </td>
                   <td style={{ color: l.type === "Credit" ? "var(--accent-4)" : "var(--accent-5)", fontWeight: 700 }}>{l.type.toUpperCase()}</td>
-                  <td style={{ fontWeight: 800, fontSize: 15 }}>₹{parseFloat(l.amount).toLocaleString('en-IN')}</td>
+                  <td style={{ fontWeight: 800, fontSize: 15 }}>£{parseFloat(l.amount).toLocaleString('en-IN')}</td>
                   <td><span className={`pill ${l.status === "Completed" ? "green" : "yellow"}`}>{l.status}</span></td>
                   <td style={{ textAlign: 'right' }}>
                     {l.status === "Pending" && l.source === "manual" ? (
@@ -157,7 +157,7 @@ export default function Finance({ push }) {
 
             <div className="form-group" style={{ gridColumn: 'span 2' }}><label>Description / Notes</label><input placeholder="e.g. Ramesh Monthly Salary" value={form.description} onChange={e => setForm({...form, description: e.target.value})} /></div>
             
-            <div className="form-group"><label>Amount (₹)</label><input type="number" placeholder="0.00" value={form.amount} onChange={e => setForm({...form, amount: e.target.value})} /></div>
+            <div className="form-group"><label>Amount (£)</label><input type="number" placeholder="0.00" value={form.amount} onChange={e => setForm({...form, amount: e.target.value})} /></div>
             <div className="form-group">
               <label>Payment Status</label>
               <select value={form.status} onChange={e => setForm({...form, status: e.target.value})} style={{ width: '100%', padding: 10, borderRadius: 8, background: 'var(--bg-base)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>

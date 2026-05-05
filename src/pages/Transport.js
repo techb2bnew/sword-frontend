@@ -40,14 +40,54 @@ export default function Transport({ push }) {
   useEffect(() => { fetchData(); }, [fetchData]);
 
   const saveVehicle = async () => {
+    // Validate required fields
+    if (!vForm.vehicle_number?.trim()) {
+      return push("Please enter a vehicle number (plate/registration)", "error");
+    }
+    if (!vForm.driver_name?.trim()) {
+      return push("Please enter the driver's name", "error");
+    }
+    if (!vForm.capacity_kg || parseFloat(vForm.capacity_kg) <= 0) {
+      return push("Please enter a valid capacity in kg", "error");
+    }
+    
     setLoading(true);
     try {
       const headers = { Authorization: `Bearer ${localStorage.getItem("erp_token")}` };
-      if (isEditingV) await axios.put(`${API}/transport/vehicles/${currentVId}`, vForm, { headers });
-      else await axios.post(`${API}/transport/vehicles`, vForm, { headers });
-      setShowVModal(false); resetVForm(); fetchData();
-      push("Success");
-    } catch { push("Error", "error"); }
+      const payload = {
+        vehicle_number: vForm.vehicle_number.trim(),
+        vehicle_type: vForm.vehicle_type,
+        capacity_kg: parseFloat(vForm.capacity_kg),
+        capacity_volume: vForm.capacity_volume ? parseFloat(vForm.capacity_volume) : 0,
+        driver_name: vForm.driver_name.trim(),
+        driver_phone: vForm.driver_phone?.trim() || "",
+        current_latitude: vForm.current_latitude || 0,
+        current_longitude: vForm.current_longitude || 0,
+        assigned_warehouse_id: vForm.assigned_warehouse_id || null,
+        status: vForm.status
+      };
+      
+      if (isEditingV) {
+        await axios.put(`${API}/transport/vehicles/${currentVId}`, payload, { headers });
+      } else {
+        await axios.post(`${API}/transport/vehicles`, payload, { headers });
+      }
+      
+      setShowVModal(false); 
+      resetVForm(); 
+      fetchData();
+      push(isEditingV ? "✓ Vehicle updated successfully" : "✓ Vehicle created successfully", "success");
+    } catch (err) { 
+      const errorMsg = err.response?.data?.error || err.message;
+      console.error("Vehicle save error:", errorMsg);
+      
+      // Handle specific error cases
+      if (errorMsg.includes("duplicate") || errorMsg.includes("unique")) {
+        push("❌ This vehicle number already exists. Please use a different plate/registration number.", "error");
+      } else {
+        push(`❌ Failed to save vehicle: ${errorMsg}`, "error");
+      }
+    }
     finally { setLoading(false); }
   };
 
@@ -96,14 +136,84 @@ export default function Transport({ push }) {
             </div>
           </div>
           {showVModal && (
-            <Modal title={isEditingV ? "Edit" : "New"} onClose={() => setShowVModal(false)} onConfirm={saveVehicle} loading={loading}>
-              <div className="form-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
-                <div className="form-group"><label>Vehicle #</label><input value={vForm.vehicle_number} onChange={e => setVForm({...vForm, vehicle_number: e.target.value})} /></div>
-                <div className="form-group"><label>Type</label><select value={vForm.vehicle_type} onChange={e => setVForm({...vForm, vehicle_type: e.target.value})}><option value="Truck">Truck</option><option value="Van">Van</option></select></div>
-                <div className="form-group"><label>Capacity (kg)</label><input type="number" value={vForm.capacity_kg} onChange={e => setVForm({...vForm, capacity_kg: e.target.value})} /></div>
-                <div className="form-group"><label>Driver</label><input value={vForm.driver_name} onChange={e => setVForm({...vForm, driver_name: e.target.value})} /></div>
-                <div className="form-group"><label>Warehouse</label><select value={vForm.assigned_warehouse_id} onChange={e => setVForm({...vForm, assigned_warehouse_id: e.target.value})}><option value="">Select</option>{warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}</select></div>
-                <div className="form-group"><label>Status</label><select value={vForm.status} onChange={e => setVForm({...vForm, status: e.target.value})}><option value="available">Available</option><option value="maintenance">Maintenance</option></select></div>
+            <Modal title={isEditingV ? "Edit Vehicle" : "Register New Vehicle"} onClose={() => setShowVModal(false)} onConfirm={saveVehicle} confirmText={isEditingV ? "Update Vehicle" : "Create Fleet"} loading={loading}>
+              <div className="form-grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div className="form-group">
+                  <label>Vehicle Plate Number *</label>
+                  <input 
+                    value={vForm.vehicle_number} 
+                    onChange={e => setVForm({...vForm, vehicle_number: e.target.value})} 
+                    placeholder="e.g. MH-1234-AB56" 
+                    required 
+                  />
+                  <small style={{opacity: 0.6}}>Must be unique</small>
+                </div>
+                <div className="form-group">
+                  <label>Vehicle Type</label>
+                  <select value={vForm.vehicle_type} onChange={e => setVForm({...vForm, vehicle_type: e.target.value})}>
+                    <option value="Truck">Truck</option>
+                    <option value="Van">Van</option>
+                    <option value="Lorry">Lorry</option>
+                    <option value="Tempo">Tempo</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Capacity (kg) *</label>
+                  <input 
+                    type="number" 
+                    min="1" 
+                    value={vForm.capacity_kg} 
+                    onChange={e => setVForm({...vForm, capacity_kg: e.target.value})} 
+                    placeholder="e.g. 5000" 
+                    required 
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Volume (m³)</label>
+                  <input 
+                    type="number" 
+                    step="0.1"
+                    value={vForm.capacity_volume} 
+                    onChange={e => setVForm({...vForm, capacity_volume: e.target.value})} 
+                    placeholder="e.g. 50" 
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Driver Name *</label>
+                  <input 
+                    value={vForm.driver_name} 
+                    onChange={e => setVForm({...vForm, driver_name: e.target.value})} 
+                    placeholder="Full name" 
+                    required 
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Driver Phone</label>
+                  <input 
+                    value={vForm.driver_phone} 
+                    onChange={e => setVForm({...vForm, driver_phone: e.target.value})} 
+                    placeholder="Contact number" 
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Assigned Warehouse</label>
+                  <select value={vForm.assigned_warehouse_id} onChange={e => setVForm({...vForm, assigned_warehouse_id: e.target.value})}>
+                    <option value="">Not Assigned</option>
+                    {warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Status</label>
+                  <select value={vForm.status} onChange={e => setVForm({...vForm, status: e.target.value})}>
+                    <option value="available">Available</option>
+                    <option value="assigned">Assigned</option>
+                    <option value="maintenance">Maintenance</option>
+                    <option value="retired">Retired</option>
+                  </select>
+                </div>
+              </div>
+              <div style={{ marginTop: 20, padding: '12px', background: 'rgba(99, 102, 241, 0.05)', borderRadius: '8px', fontSize: 12, borderLeft: '3px solid var(--accent)' }}>
+                <strong>* Required fields</strong> — Fill in vehicle plate number, capacity, and driver name to continue.
               </div>
             </Modal>
           )}

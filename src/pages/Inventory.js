@@ -172,7 +172,7 @@ export default function Inventory({ products, onRefresh, push, user }) {
         </div>
         <div className="stat-card c4">
           <div className="stat-label">Stock Value</div>
-          <div className="stat-value">₹{products.reduce((acc, p) => acc + (Number(p.price) * Number(p.stock || 0)), 0).toLocaleString()}</div>
+          <div className="stat-value">£{products.reduce((acc, p) => acc + (Number(p.price) * Number(p.stock || 0)), 0).toLocaleString()}</div>
         </div>
       </div>
 
@@ -184,7 +184,7 @@ export default function Inventory({ products, onRefresh, push, user }) {
               <input placeholder="e.g. Wireless Keyboard" value={form.name} onChange={set("name")} />
             </div>
             <div className="form-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
-              <div className="form-group"><label>Price (₹)</label><input type="number" value={form.price} onChange={set("price")} /></div>
+              <div className="form-group"><label>Price (£)</label><input type="number" value={form.price} onChange={set("price")} /></div>
               <div className="form-group"><label>Barcode / SKU</label><input value={form.barcode} onChange={set("barcode")} /></div>
             </div>
             <div className="form-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
@@ -242,7 +242,7 @@ export default function Inventory({ products, onRefresh, push, user }) {
                     </td>
                     <td style={{ fontWeight: 700 }}>{p.totalStock} {p.uom}</td>
                     <td>{getStockPill(p.totalStock)}</td>
-                    <td style={{ color: 'var(--accent)' }}>₹{Number(p.price).toLocaleString()}</td>
+                    <td style={{ color: 'var(--accent)' }}>£{Number(p.price).toLocaleString()}</td>
                     <td style={{ textAlign: 'right' }}>
                       <button className="btn btn-secondary btn-sm" onClick={() => setShowModal(true)}>＋ Add More</button>
                     </td>

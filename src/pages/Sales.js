@@ -2,10 +2,10 @@ import React from "react";
 
 export default function Sales({ push }) {
   const orders = [
-    { id: "#SO-1042", customer: "Raj Enterprises", items: 5, value: "₹12,400", date: "28 Apr 2026", status: "Dispatched" },
-    { id: "#SO-1041", customer: "TechZone Pvt Ltd", items: 2, value: "₹3,200",  date: "27 Apr 2026", status: "Processing" },
-    { id: "#SO-1040", customer: "Mega Retail Co.",  items: 8, value: "₹28,900", date: "26 Apr 2026", status: "Delivered" },
-    { id: "#SO-1039", customer: "Sunrise Trading",  items: 3, value: "₹6,750",  date: "25 Apr 2026", status: "On Hold" },
+    { id: "#SO-1042", customer: "Raj Enterprises", items: 5, value: "£12,400", date: "28 Apr 2026", status: "Dispatched" },
+    { id: "#SO-1041", customer: "TechZone Pvt Ltd", items: 2, value: "£3,200",  date: "27 Apr 2026", status: "Processing" },
+    { id: "#SO-1040", customer: "Mega Retail Co.",  items: 8, value: "£28,900", date: "26 Apr 2026", status: "Delivered" },
+    { id: "#SO-1039", customer: "Sunrise Trading",  items: 3, value: "£6,750",  date: "25 Apr 2026", status: "On Hold" },
   ];
   const statusClass = { Dispatched: "cyan", Processing: "yellow", Delivered: "green", "On Hold": "red" };
   

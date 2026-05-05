@@ -79,10 +79,13 @@ export default function AuthPage({ onLogin, push }) {
             <>
               <label style={{ marginTop: "15px" }}>Role</label>
               <select value={form.role} onChange={set("role")} style={{ width: "100%", padding: "10px", borderRadius: "8px", background: "var(--bg-base)", border: "1px solid var(--border)", color: "var(--text-primary)" }}>
-                <option value="staff">Staff</option>
-                <option value="manager">Manager</option>
                 <option value="admin">Admin</option>
+                <option value="customer">Customer</option>
                 <option value="supplier">Supplier</option>
+                <option value="buyer">Buyer</option>
+                <option value="driver">Driver</option>
+                <option value="accountant">Accountant</option>
+                <option value="manager">Manager</option>
               </select>
 
               {form.role === 'supplier' && (

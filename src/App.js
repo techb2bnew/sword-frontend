@@ -20,6 +20,9 @@ import SupplierDashboard from "./pages/SupplierDashboard";
 import SupplierQuotations from "./pages/SupplierQuotations";
 import Customers from "./pages/Customers";
 import CustomerOrders from "./pages/CustomerOrders";
+import BuyerDashboard from "./pages/BuyerDashboard";
+import BuyerQuotations from "./pages/BuyerQuotations";
+import BuyerSuppliers from "./pages/BuyerSuppliers";
 
 // ── Toast Hook ──────────────────────────────────────────────────────────────
 function useToast() {
@@ -58,6 +61,8 @@ function App() {
       // Default module based on role
       if (parsedUser.role === 'supplier' && activeModule === 'dashboard') {
         setActiveModule('supplier-dashboard');
+      } else if (parsedUser.role === 'buyer' && activeModule === 'dashboard') {
+        setActiveModule('buyer-dashboard');
       }
     }
     fetchProducts();
@@ -98,6 +103,27 @@ function App() {
           {/* Supplier Modules */}
           {activeModule === "supplier-dashboard" && <SupplierDashboard user={user} products={products} push={push} setActiveModule={setActiveModule} />}
           {activeModule === "supplier-quotations" && <SupplierQuotations products={products} push={push} />}
+          
+          {/* Buyer Modules */}
+          {activeModule === "buyer-dashboard" && (
+            <BuyerDashboard
+              products={products}
+              push={push}
+              user={user}
+            />
+          )}
+
+          {activeModule === "buyer-suppliers" && (
+            <BuyerSuppliers push={push} />
+          )}
+
+          {activeModule === "buyer-quotations" && (
+            <BuyerQuotations
+              products={products}
+              push={push}
+              user={user}
+            />
+          )}
           
           {["manufacturing", "reports"].includes(activeModule) && (
             <div className="empty-state">
