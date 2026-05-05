@@ -13,7 +13,15 @@ export default function Warehouse({ products, push }) {
 
   // Warehouse Form
   const [showWModal, setShowWModal] = useState(false);
-  const [wForm, setWForm] = useState({ name: "", location: "", capacity_sqft: "", manager_name: "" });
+  const [wForm, setWForm] = useState({ 
+    name: "", 
+    location: "", 
+    capacity_sqft: "", 
+    manager_name: "",
+    latitude: "",
+    longitude: "",
+    status: "active"
+  });
 
   // Transfer Form
   const [showTModal, setShowTModal] = useState(false);
@@ -49,9 +57,10 @@ export default function Warehouse({ products, push }) {
     if (!wForm.name) return push("Warehouse name is required", "error");
     setLoading(true);
     try {
-      await axios.post(`${API}/warehouse`, wForm);
+      const headers = { Authorization: `Bearer ${localStorage.getItem("erp_token")}` };
+      await axios.post(`${API}/warehouse`, wForm, { headers });
       push("Warehouse added successfully");
-      setWForm({ name: "", location: "", capacity_sqft: "", manager_name: "" });
+      setWForm({ name: "", location: "", capacity_sqft: "", manager_name: "", latitude: "", longitude: "", status: "active" });
       setShowWModal(false);
       fetchData();
     } catch { push("Error adding warehouse", "error"); }
@@ -62,7 +71,8 @@ export default function Warehouse({ products, push }) {
     if (!tForm.product_id || !tForm.to_warehouse_id || !tForm.quantity) return push("Missing required fields", "error");
     setLoading(true);
     try {
-      await axios.post(`${API}/warehouse/movements`, tForm);
+      const headers = { Authorization: `Bearer ${localStorage.getItem("erp_token")}` };
+      await axios.post(`${API}/warehouse/movements`, tForm, { headers });
       push("Stock transfer completed!");
       setTForm({ product_id: "", from_warehouse_id: "", to_warehouse_id: "", to_bin_id: "", quantity: "", reason: "" });
       setShowTModal(false);
@@ -75,7 +85,8 @@ export default function Warehouse({ products, push }) {
     if (!rForm.warehouse_id || !rForm.rack_code) return push("Warehouse and Rack Code are required", "error");
     setLoading(true);
     try {
-      await axios.post(`${API}/warehouse/bins/bulk`, rForm);
+      const headers = { Authorization: `Bearer ${localStorage.getItem("erp_token")}` };
+      await axios.post(`${API}/warehouse/bins/bulk`, rForm, { headers });
       push(`Rack ${rForm.rack_code} added successfully!`);
       setShowRModal(false);
       setRForm({ warehouse_id: "", rack_code: "", bin_count: 5 });
@@ -88,10 +99,11 @@ export default function Warehouse({ products, push }) {
     if (!newRackName) return;
     setLoading(true);
     try {
+      const headers = { Authorization: `Bearer ${localStorage.getItem("erp_token")}` };
       await axios.put(`${API}/warehouse/bins/rack/${rackActionData.warehouse_id}/${rackActionData.rack_code}`, { 
         new_code: newRackName,
         bin_count: newBinCount
-      });
+      }, { headers });
       push(`Rack ${newRackName} updated successfully`);
       setShowRackEditModal(false);
       fetchData();
@@ -103,7 +115,8 @@ export default function Warehouse({ products, push }) {
   const handleRackDelete = async () => {
     setLoading(true);
     try {
-      await axios.delete(`${API}/warehouse/bins/rack/${rackActionData.warehouse_id}/${rackActionData.rack_code}`);
+      const headers = { Authorization: `Bearer ${localStorage.getItem("erp_token")}` };
+      await axios.delete(`${API}/warehouse/bins/rack/${rackActionData.warehouse_id}/${rackActionData.rack_code}`, { headers });
       push("Rack deleted successfully");
       setShowRackDeleteModal(false);
       fetchData();
@@ -132,6 +145,12 @@ export default function Warehouse({ products, push }) {
               <div className="form-grid" style={{ gridTemplateColumns: '1fr' }}>
                 <div className="form-group"><label>Warehouse Name</label><input value={wForm.name} onChange={e => setWForm({...wForm, name: e.target.value})} placeholder="e.g. South Zone Hub" /></div>
                 <div className="form-group"><label>Location / Address</label><input value={wForm.location} onChange={e => setWForm({...wForm, location: e.target.value})} /></div>
+                
+                <div className="form-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
+                   <div className="form-group"><label>Latitude</label><input type="number" step="any" value={wForm.latitude} onChange={e => setWForm({...wForm, latitude: e.target.value})} placeholder="e.g. 19.0760" /></div>
+                   <div className="form-group"><label>Longitude</label><input type="number" step="any" value={wForm.longitude} onChange={e => setWForm({...wForm, longitude: e.target.value})} placeholder="e.g. 72.8777" /></div>
+                </div>
+
                 <div className="form-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
                   <div className="form-group"><label>Capacity (Sqft)</label><input type="number" value={wForm.capacity_sqft} onChange={e => setWForm({...wForm, capacity_sqft: e.target.value})} /></div>
                   <div className="form-group"><label>Manager Name</label><input value={wForm.manager_name} onChange={e => setWForm({...wForm, manager_name: e.target.value})} /></div>
@@ -158,10 +177,11 @@ export default function Warehouse({ products, push }) {
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 15 }}>
                   <div className="stat-icon i2">🏠</div>
-                  <span className="pill green">{w.status}</span>
+                  <span className={`pill ${w.status === 'Active' ? 'green' : 'red'}`}>{w.status.toUpperCase()}</span>
                 </div>
                 <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 5 }}>{w.name}</div>
-                <div style={{ fontSize: 12, opacity: 0.6, marginBottom: 15 }}>{w.location}</div>
+                <div style={{ fontSize: 12, opacity: 0.6, marginBottom: 5 }}>{w.location}</div>
+                <div style={{ fontSize: 10, opacity: 0.5, marginBottom: 15 }}>GPS: {parseFloat(w.latitude || 0).toFixed(4)}, {parseFloat(w.longitude || 0).toFixed(4)}</div>
                 
                 <div style={{ borderTop: '1px solid var(--border)', paddingTop: 10, display: 'flex', justifyContent: 'space-between', fontSize: 11, marginBottom: 10 }}>
                   <span>Manager: {w.manager_name}</span>
@@ -276,6 +296,9 @@ export default function Warehouse({ products, push }) {
                   <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 15, display: 'flex', alignItems: 'center', gap: 10 }}>
                     <span className="pill purple" style={{ padding: '4px 12px' }}>Rack: {rack}</span>
                     {firstBin?.category && <span className="pill blue" style={{ padding: '4px 12px', fontSize: 10 }}>{firstBin.category.toUpperCase()}</span>}
+                    <span className="pill green" style={{ padding: '4px 12px', fontSize: 10 }}>
+                      Total: {bins.filter(b => b.rack_code === rack && (!selectedWhId || b.warehouse_id === selectedWhId)).reduce((acc, b) => acc + Number(b.product_stock || 0), 0)}
+                    </span>
                     <div style={{ flex: 1, height: 1, background: 'var(--border)' }}></div>
                     <div style={{ display: 'flex', gap: 5 }}>
                       <button 
@@ -330,16 +353,20 @@ export default function Warehouse({ products, push }) {
                         
                         {bin.status !== 'Empty' ? (
                           <>
-                            <div style={{ fontSize: 13, fontWeight: 600, color: bin.status === 'Occupied' ? 'var(--accent-1)' : '#f59e0b', marginBottom: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: bin.status === 'Occupied' ? 'var(--accent-1)' : '#f59e0b', marginBottom: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                               {bin.product_name || "Reserved Item"}
                             </div>
-                            <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>
-                              {bin.status === 'Reserved' ? 'Pre-allocated' : `Qty: ${bin.product_stock} ${bin.uom}`}
+                            <div style={{ fontSize: 11, color: 'var(--text-primary)', fontWeight: 600 }}>
+                              {bin.status === 'Reserved' ? `Allocated: ${bin.product_stock}` : `Stock: ${bin.product_stock}`}
+                              <span style={{ opacity: 0.5, fontWeight: 400, marginLeft: 4 }}>/ {bin.capacity} {bin.uom || ''}</span>
                             </div>
                             <div style={{ fontSize: 9, marginTop: 4, color: 'var(--text-muted)', fontWeight: 600 }}>{bin.status.toUpperCase()}</div>
                           </>
                         ) : (
-                          <div style={{ fontSize: 11, color: 'var(--text-muted)', fontStyle: 'italic' }}>Empty - Click to Assign</div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                            <div style={{ fontSize: 11, color: 'var(--text-muted)', fontStyle: 'italic' }}>Empty - Assign Item</div>
+                            <div style={{ fontSize: 10, color: 'var(--accent)', fontWeight: 600 }}>Cap: {bin.capacity} units</div>
+                          </div>
                         )}
                       </div>
                     ))}

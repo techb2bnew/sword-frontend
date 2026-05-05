@@ -10,7 +10,7 @@ const getStockPill = (stock) => {
 };
 
 export default function Inventory({ products, onRefresh, push, user }) {
-  const [form, setForm] = useState({ name: "", price: "", barcode: "", stock: 0, type: "finished_good", uom: "units", warehouse_id: "", bin_id: "", supplier_id: "" });
+  const [form, setForm] = useState({ name: "", price: "", barcode: "", stock: 0, weight_kg: 0, type: "finished_good", uom: "units", warehouse_id: "", bin_id: "", supplier_id: "" });
   const [loading, setLoading] = useState(false);
   const [editId, setEditId] = useState(null);
   const [showModal, setShowModal] = useState(false);
@@ -22,6 +22,8 @@ export default function Inventory({ products, onRefresh, push, user }) {
   const [bins, setBins] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [supplierFilter, setSupplierFilter] = useState("all");
+  const [expandedProduct, setExpandedProduct] = useState(null);
+
   const set = (k) => (e) => setForm((p) => ({ ...p, [k]: e.target.value }));
 
   const fetchData = useCallback(async () => {
@@ -41,61 +43,35 @@ export default function Inventory({ products, onRefresh, push, user }) {
   useEffect(() => { fetchData(); }, [fetchData]);
 
   const resetForm = () => {
-    setForm({ name: "", price: "", barcode: "", stock: 0, type: "finished_good", uom: "units", warehouse_id: "", bin_id: "", supplier_id: "" });
+    setForm({ name: "", price: "", barcode: "", stock: 0, weight_kg: 0, type: "finished_good", uom: "units", warehouse_id: "", bin_id: "", supplier_id: "" });
     setEditId(null);
     setShowModal(false);
   };
 
   const handleSave = async () => {
-  if (!form.name || !form.price) {
-    push("Name and Price are required", "error");
-    return;
-  }
-
-  setLoading(true);
-
-  try {
-    const token = localStorage.getItem("erp_token"); 
-    // agar authToken ya accessToken naam se store hai toh wahi use karo
-
-    const config = {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    };
-
-    if (editId) {
-      await axios.put(
-        `${API}/inventory/products/${editId}`,
-        form,
-        config
-      );
-
-      push("Product updated successfully!");
-    } else {
-      await axios.post(
-        `${API}/inventory/products`,
-        form,
-        config
-      );
-
-      push("Product added successfully!");
+    if (!form.name || !form.price) {
+      push("Name and Price are required", "error");
+      return;
     }
-
-    resetForm();
-    await onRefresh();
-
-  } catch (error) {
-    console.error("Save error:", error);
-
-    push(
-      `Failed to ${editId ? "update" : "add"} product`,
-      "error"
-    );
-  } finally {
-    setLoading(false);
-  }
-};
+    setLoading(true);
+    try {
+      const token = localStorage.getItem("erp_token");
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+      if (editId) {
+        await axios.put(`${API}/inventory/products/${editId}`, form, config);
+        push("Product updated successfully!");
+      } else {
+        await axios.post(`${API}/inventory/products`, form, config);
+        push("Product added successfully!");
+      }
+      resetForm();
+      await onRefresh();
+    } catch (error) {
+      push(`Failed to ${editId ? "update" : "add"} product`, "error");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleEdit = (p) => {
     setEditId(p.id);
@@ -108,7 +84,8 @@ export default function Inventory({ products, onRefresh, push, user }) {
         uom: p.uom || "units",
         warehouse_id: p.warehouse_id || "",
         bin_id: p.bin_id || "",
-        supplier_id: p.supplier_id || ""
+        supplier_id: p.supplier_id || "",
+        weight_kg: p.weight_kg || 0
     });
     setShowModal(true);
   };
@@ -133,277 +110,165 @@ export default function Inventory({ products, onRefresh, push, user }) {
     }
   };
 
+  if (!user) return null;
+
+  // Group products by name for Multi-Warehouse Management
+  const groupedProducts = products.reduce((acc, p) => {
+    if (!acc[p.name]) {
+      acc[p.name] = {
+        name: p.name,
+        type: p.type,
+        uom: p.uom,
+        barcode: p.barcode,
+        price: p.price,
+        supplier_name: p.supplier_name,
+        totalStock: 0,
+        warehouses: []
+      };
+    }
+    acc[p.name].totalStock += Number(p.stock || 0);
+    acc[p.name].warehouses.push({
+      id: p.id,
+      warehouse_name: p.warehouse_name || "Unassigned",
+      stock: p.stock,
+      locations: p.locations,
+      original: p
+    });
+    return acc;
+  }, {});
+
+  const productList = Object.values(groupedProducts).filter(p => {
+    const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                         (p.barcode && p.barcode.toLowerCase().includes(searchTerm.toLowerCase()));
+    return matchesSearch;
+  });
+
   return (
     <div className="fade-up">
       <div className="section-header" style={{ marginBottom: 24 }}>
-        <div className="section-title">Inventory Overview</div>
+        <div className="section-title">Multi-Warehouse Inventory</div>
         <div style={{ display: 'flex', gap: 10 }}>
           <div className="topbar-search" style={{ margin: 0, width: 300, background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
             <span className="search-icon">🔍</span>
             <input 
               type="text" 
-              placeholder="Locate by Name or Barcode..." 
+              placeholder="Search products across warehouses..." 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          {user.role === 'admin' && (
-            <select 
-              className="btn btn-secondary" 
-              style={{ padding: '0 15px', height: 40, borderRadius: 8, background: 'var(--bg-surface)' }}
-              value={supplierFilter}
-              onChange={(e) => setSupplierFilter(e.target.value)}
-            >
-              <option value="all">All Ownerships</option>
-              <option value="in-house">🏠 In-house Only</option>
-              {suppliers.map(s => <option key={s.id} value={s.id}>🏭 {s.name}</option>)}
-            </select>
-          )}
-          {<button className="btn btn-primary" onClick={() => setShowModal(true)}>＋ Add New Product</button>}
+          <button className="btn btn-primary" onClick={() => setShowModal(true)}>＋ Add Inventory</button>
         </div>
       </div>
 
-      {user.role === 'admin' && (
-        <div className="stats-grid" style={{ marginBottom: 24, gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }}>
-          <div className="stat-card c1">
-            <div className="stat-label">Total SKUs</div>
-            <div className="stat-value" style={{ fontSize: 24 }}>{products.length}</div>
-            <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>Unique items in catalog</div>
-          </div>
-          <div className="stat-card c4">
-            <div className="stat-label">Stock Value</div>
-            <div className="stat-value" style={{ fontSize: 24 }}>
-              ₹{products.reduce((acc, p) => acc + (Number(p.price) * Number(p.stock || 0)), 0).toLocaleString("en-IN")}
-            </div>
-            <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>Estimated total value</div>
-          </div>
-          <div className="stat-card c5">
-            <div className="stat-label">Low Stock</div>
-            <div className="stat-value" style={{ fontSize: 24, color: 'var(--accent-5)' }}>
-              {products.filter(p => (p.stock || 0) <= 5).length}
-            </div>
-            <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>Items requiring restock</div>
-          </div>
-          <div className="stat-card c2">
-            <div className="stat-label">Total Volume</div>
-            <div className="stat-value" style={{ fontSize: 24 }}>
-              {products.reduce((acc, p) => acc + Number(p.stock || 0), 0).toLocaleString()}
-            </div>
-            <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>Total items across WH</div>
-          </div>
+      <div className="stats-grid" style={{ marginBottom: 24, gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }}>
+        <div className="stat-card c1">
+          <div className="stat-label">Unique Products</div>
+          <div className="stat-value">{Object.keys(groupedProducts).length}</div>
         </div>
-      )}
+        <div className="stat-card c2">
+          <div className="stat-label">Total Items</div>
+          <div className="stat-value">{products.reduce((acc, p) => acc + Number(p.stock || 0), 0)}</div>
+        </div>
+        <div className="stat-card c4">
+          <div className="stat-label">Stock Value</div>
+          <div className="stat-value">₹{products.reduce((acc, p) => acc + (Number(p.price) * Number(p.stock || 0)), 0).toLocaleString()}</div>
+        </div>
+      </div>
 
       {showModal && (
-        <Modal 
-          title={editId ? "Edit Product" : "Add New Product"} 
-          onClose={resetForm} 
-          onConfirm={handleSave}
-          loading={loading}
-          confirmText={editId ? "Update Product" : "Save Product"}
-        >
+        <Modal title={editId ? "Edit Stock Entry" : "Add Stock to Warehouse"} onClose={resetForm} onConfirm={handleSave} loading={loading}>
           <div className="form-grid" style={{ gridTemplateColumns: '1fr' }}>
             <div className="form-group">
-              <label>Product Name</label>
+              <label>Product Name *</label>
               <input placeholder="e.g. Wireless Keyboard" value={form.name} onChange={set("name")} />
             </div>
-            {user.role === 'admin' && (
-              <div className="form-group">
-                <label>Ownership / Supplier</label>
-                <select value={form.supplier_id} onChange={set("supplier_id")} style={{ width: '100%', padding: 10, borderRadius: 8, background: 'var(--bg-base)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
-                  <option value="">In-house (Admin Owned)</option>
-                  {suppliers.map(s => <option key={s.id} value={s.id}>{s.name} (Supplier)</option>)}
-                </select>
-              </div>
-            )}
-            <div className="form-grid" style={{ gridTemplateColumns: user.role === 'supplier' ? '1fr' : '1fr 1fr' }}>
-              <div className="form-group">
-                <label>Price (₹)</label>
-                <input type="number" placeholder="e.g. 1299" value={form.price} onChange={set("price")} />
-              </div>
-              {user.role !== 'supplier' && (
-                <div className="form-group">
-                  <label>Barcode / SKU</label>
-                  <input placeholder="e.g. SKU-4421" value={form.barcode} onChange={set("barcode")} />
-                </div>
-              )}
+            <div className="form-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
+              <div className="form-group"><label>Price (₹)</label><input type="number" value={form.price} onChange={set("price")} /></div>
+              <div className="form-group"><label>Barcode / SKU</label><input value={form.barcode} onChange={set("barcode")} /></div>
             </div>
             <div className="form-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
-              <div className="form-group">
-                <label>Quantity in Stock</label>
-                <input type="number" placeholder="0" value={form.stock} onChange={set("stock")} />
-              </div>
-              <div className="form-group">
-                <label>Product Type</label>
-                <select value={form.type} onChange={set("type")}>
-                  <option value="finished_good">Finished Good</option>
-                  <option value="raw_material">Raw Material</option>
+              <div className="form-group"><label>Quantity to Add</label><input type="number" value={form.stock} onChange={set("stock")} /></div>
+              <div className="form-group"><label>Warehouse</label>
+                <select value={form.warehouse_id} onChange={set("warehouse_id")}>
+                  <option value="">Select Warehouse</option>
+                  {warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
                 </select>
               </div>
             </div>
             <div className="form-group">
-              <label>Unit of Measure (UOM)</label>
-              <select value={form.uom} onChange={set("uom")}>
-                <option value="units">Units / Items</option>
-                <option value="kg">Kilograms (kg)</option>
-                <option value="metre">Metres (m)</option>
-                <option value="litre">Litres (L)</option>
-                <option value="box">Boxes</option>
-                <option value="pkt">Packets</option>
+              <label>Assign Bin</label>
+              <select disabled={!form.warehouse_id} value={form.bin_id} onChange={set("bin_id")}>
+                <option value="">Select Bin</option>
+                {bins.filter(b => b.warehouse_id === parseInt(form.warehouse_id)).map(b => (
+                  <option key={b.id} value={b.id} disabled={b.status === 'Occupied' && b.id !== form.bin_id}>
+                    {b.rack_code} - {b.bin_code} ({b.status})
+                  </option>
+                ))}
               </select>
             </div>
-
-            {user.role !== 'supplier' && (
-              <div className="form-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
-                <div className="form-group">
-                  <label>Assign Warehouse</label>
-                  <select value={form.warehouse_id} onChange={set("warehouse_id")} style={{ width: '100%', padding: 10, borderRadius: 8, background: 'var(--bg-base)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
-                    <option value="">Select Warehouse</option>
-                    {warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label>Assign Rack / Bin</label>
-                  <select disabled={!form.warehouse_id} value={form.bin_id} onChange={set("bin_id")} style={{ width: '100%', padding: 10, borderRadius: 8, background: 'var(--bg-base)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
-                    <option value="">Select Available Bin</option>
-                    {bins.filter(b => b.warehouse_id === parseInt(form.warehouse_id)).map(b => (
-                      <option key={b.id} value={b.id} disabled={b.status === 'Occupied' && b.id !== form.bin_id}>
-                        {b.rack_code} · {b.bin_code} {b.status === 'Occupied' ? '(OCCUPIED)' : '(AVAILABLE)'}
-                      </option>
-                    ))}
-                  </select>
-                  <div style={{ fontSize: 10, marginTop: 5, color: 'var(--text-muted)' }}>
-                    {warehouses.find(w => w.id === parseInt(form.warehouse_id)) && (
-                      <span>Available space: {bins.filter(b => b.warehouse_id === parseInt(form.warehouse_id) && b.status === 'Empty').length} bins</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
-        </Modal>
-      )}
-
-      {showDeleteModal && (
-        <Modal 
-          title="Delete Product" 
-          type="danger"
-          confirmText="Delete Anyway"
-          onClose={() => setShowDeleteModal(false)} 
-          onConfirm={handleDelete}
-          loading={loading}
-        >
-          <p style={{ color: 'var(--text-secondary)' }}>Are you sure you want to delete this product? This action cannot be undone.</p>
         </Modal>
       )}
 
       <div className="card">
-        <div className="card-body" style={{ paddingBottom: 0 }}>
-          <div className="section-title">Product List <span>({products.length} items)</span></div>
-        </div>
         <div className="table-wrap">
-          {products.length === 0 ? (
-            <div className="empty-state">
-              <div className="icon">📦</div>
-              <p>No products found. Start by adding one!</p>
-            </div>
-          ) : (
-            <table>
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Product Name</th>
-                  {user.role === 'admin' && <th>Supplier</th>}
-                  {user.role !== 'supplier' && <th>Location (WH / Rack / Bin)</th>}
-                  <th>Price</th>
-                  {user.role !== 'supplier' && <th>Barcode</th>}
-                  {user.role !== 'supplier' && <th>Stock</th>}
-                  {user.role !== 'supplier' && <th>Status</th>}
-                  <th style={{ textAlign: "right" }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {products.filter(p => {
-                  const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                                       (p.barcode && p.barcode.toLowerCase().includes(searchTerm.toLowerCase()));
-                  const matchesSupplier = supplierFilter === "all" || 
-                                         (supplierFilter === "in-house" && !p.supplier_id) || 
-                                         (p.supplier_id === parseInt(supplierFilter));
-                  return matchesSearch && matchesSupplier;
-                }).map((p, i) => (
-                  <tr key={p.id}>
-                    <td style={{ color: "var(--text-muted)" }}>{i + 1}</td>
+          <table>
+            <thead>
+              <tr>
+                <th style={{ width: 40 }}></th>
+                <th>Product</th>
+                <th>Total Stock</th>
+                <th>Status</th>
+                <th>Avg. Price</th>
+                <th style={{ textAlign: 'right' }}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {productList.map((p, i) => (
+                <React.Fragment key={p.name}>
+                  <tr style={{ background: expandedProduct === p.name ? 'rgba(99, 102, 241, 0.05)' : 'transparent' }}>
                     <td>
-                      <div style={{ fontWeight: 600 }}>{p.name}</div>
-                      <div style={{ fontSize: 10, opacity: 0.6 }}>{p.type === 'raw_material' ? 'Raw Material' : 'Finished Good'}</div>
+                      <button 
+                        onClick={() => setExpandedProduct(expandedProduct === p.name ? null : p.name)}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent)' }}
+                      >
+                        {expandedProduct === p.name ? '▼' : '▶'}
+                      </button>
                     </td>
-                    {user.role === 'admin' && (
-                      <td>
-                        <span className="pill purple" style={{ fontSize: 10 }}>{p.supplier_name || 'In-house'}</span>
-                      </td>
-                    )}
-                    {user.role !== 'supplier' && (
-                      <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                          <span className="pill blue" style={{ fontSize: 10 }}>{p.warehouse_name || 'Unassigned'}</span>
-                          {p.locations && (
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                              {p.locations.split(', ').map(loc => (
-                                <span key={loc} className="pill purple" style={{ fontSize: 9 }}>{loc}</span>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      </td>
-                    )}
-                    <td style={{ color: "#10b981", fontWeight: 600 }}>
-                      ₹{Number(p.price).toLocaleString("en-IN")}
+                    <td>
+                      <div style={{ fontWeight: 700, fontSize: 14 }}>{p.name}</div>
+                      <div style={{ fontSize: 10, opacity: 0.6 }}>SKU: {p.barcode || 'N/A'}</div>
                     </td>
-                    {user.role !== 'supplier' && (
-                      <td>
-                        <span style={{ fontFamily: "monospace", color: "var(--accent-2)", fontSize: 12 }}>
-                          {p.barcode || "—"}
-                        </span>
-                      </td>
-                    )}
-                    {user.role !== 'supplier' && (
-                      <td style={{ fontWeight: 600 }}>
-                        {p.stock || 0} <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 400 }}>{p.uom || 'units'}</span>
-                      </td>
-                    )}
-                    {user.role !== 'supplier' && <td>{getStockPill(p.stock)}</td>}
-                    <td style={{ textAlign: "right" }}>
-                      {/* {user.role !== 'supplier' && (
-                        <>
-                          <button className="btn btn-secondary btn-sm" onClick={() => handleEdit(p)} style={{ padding: "5px 10px", fontSize: 12, marginRight: 5 }}>
-                            Edit
-                          </button>
-                          <button className="btn btn-danger btn-sm" onClick={() => confirmDelete(p.id)} style={{ padding: "5px 10px", fontSize: 12 }}>
-                            Delete
-                          </button>
-                        </>
-                      )} */}
-                       {(
-                        <>
-                          <button className="btn btn-secondary btn-sm" onClick={() => handleEdit(p)} style={{ padding: "5px 10px", fontSize: 12, marginRight: 5 }}>
-                            Edit
-                          </button>
-                          <button className="btn btn-danger btn-sm" onClick={() => confirmDelete(p.id)} style={{ padding: "5px 10px", fontSize: 12 }}>
-                            Delete
-                          </button>
-                        </>
-                      )}
-                      {/* {user.role === 'supplier' && (
-                        <button className="btn btn-secondary btn-sm" disabled style={{ padding: "5px 10px", fontSize: 12, opacity: 0.5 }}>
-                          Read Only
-                        </button>
-                      )} */}
+                    <td style={{ fontWeight: 700 }}>{p.totalStock} {p.uom}</td>
+                    <td>{getStockPill(p.totalStock)}</td>
+                    <td style={{ color: 'var(--accent)' }}>₹{Number(p.price).toLocaleString()}</td>
+                    <td style={{ textAlign: 'right' }}>
+                      <button className="btn btn-secondary btn-sm" onClick={() => setShowModal(true)}>＋ Add More</button>
                     </td>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+                  {expandedProduct === p.name && p.warehouses.map(wh => (
+                    <tr key={wh.id} style={{ background: 'rgba(255,255,255,0.02)', fontSize: 12 }}>
+                      <td></td>
+                      <td style={{ paddingLeft: 30 }}>
+                        <div style={{ fontWeight: 600 }}>📍 {wh.warehouse_name}</div>
+                        <div style={{ fontSize: 10, opacity: 0.5 }}>Bins: {wh.locations || 'Floor'}</div>
+                      </td>
+                      <td style={{ fontWeight: 600 }}>{wh.stock} {p.uom}</td>
+                      <td><span className="pill blue" style={{ fontSize: 9 }}>LOCAL STOCK</span></td>
+                      <td></td>
+                      <td style={{ textAlign: 'right' }}>
+                        <div style={{ display: 'flex', gap: 5, justifyContent: 'flex-end' }}>
+                          <button className="btn btn-secondary btn-xs" onClick={() => handleEdit(wh.original)} style={{ padding: '2px 8px', fontSize: 10 }}>Edit</button>
+                          <button className="btn btn-danger btn-xs" onClick={() => confirmDelete(wh.id)} style={{ padding: '2px 8px', fontSize: 10 }}>✕</button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </React.Fragment>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

@@ -9,130 +9,57 @@ export default function Transport({ push }) {
   const [tab, setTab] = useState("shipments");
   const [vehicles, setVehicles] = useState([]);
   const [shipments, setShipments] = useState([]);
+  const [warehouses, setWarehouses] = useState([]);
   const [loading, setLoading] = useState(false);
-
-  // Vehicle Form
-  const [showVModal, setShowVModal] = useState(false);
-  const [vForm, setVForm] = useState({ plate_number: "", vehicle_type: "", capacity: "", driver_name: "" });
 
   const [originName, setOriginName] = useState("Loading...");
   const [destinationName, setDestinationName] = useState("Loading...");
-
-  // Shipment Form
-  const [showSModal, setShowSModal] = useState(false);
-  const [sForm, setSForm] = useState({ 
-    order_id: "", 
-    vehicle_id: "", 
-    route_details: "", 
-    estimated_delivery: "",
-    origin_lat: null,
-    origin_lng: null,
-    dest_lat: null,
-    dest_lng: null,
-    distance_km: 0
-  });
-
-  // Map Viewer Modal
   const [selectedShipment, setSelectedShipment] = useState(null);
-    const [calculatedDistance, setCalculatedDistance] = useState(
-    selectedShipment?.distance_km || 0
-  );
+  const [calculatedDistance, setCalculatedDistance] = useState(0);
 
-  useEffect(() => {
-    if (!selectedShipment) return;
-
-    const loadLocations = async () => {
-      const fromLocation = await getLocationName(
-        selectedShipment.origin_lat,
-        selectedShipment.origin_lng
-      );
-
-      const toLocation = await getLocationName(
-        selectedShipment.dest_lat,
-        selectedShipment.dest_lng
-      );
-
-      setOriginName(fromLocation);
-      setDestinationName(toLocation);
-    };
-
-    loadLocations();
-  }, [selectedShipment]);
-
+  // Vehicle Form State
+  const [showVModal, setShowVModal] = useState(false);
+  const [isEditingV, setIsEditingV] = useState(false);
+  const [currentVId, setCurrentVId] = useState(null);
+  const [vForm, setVForm] = useState({ vehicle_number: "", vehicle_type: "Truck", capacity_kg: "", capacity_volume: "", driver_name: "", driver_phone: "", current_latitude: "", current_longitude: "", assigned_warehouse_id: "", status: "available" });
 
   const fetchData = useCallback(async () => {
     try {
-      const [vRes, sRes] = await Promise.all([
-        axios.get(`${API}/transport/vehicles`),
-        axios.get(`${API}/transport/shipments`)
+      const headers = { Authorization: `Bearer ${localStorage.getItem("erp_token")}` };
+      const [vRes, sRes, wRes] = await Promise.all([
+        axios.get(`${API}/transport/vehicles`, { headers }),
+        axios.get(`${API}/transport/shipments`, { headers }),
+        axios.get(`${API}/warehouse`, { headers })
       ]);
       setVehicles(vRes.data);
       setShipments(sRes.data);
+      setWarehouses(wRes.data);
     } catch { push("Failed to load transport data", "error"); }
   }, [push]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  
-
-    const getLocationName = async (lat, lng) => {
-    try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`
-      );
-
-      const data = await response.json();
-
-      return (
-        data?.address?.road ||
-        data?.address?.suburb ||
-        data?.address?.city ||
-        data?.display_name ||
-        "Unknown Location"
-      );
-    } catch (error) {
-      console.error("Location fetch error:", error);
-      return "Unknown Location";
-    }
-  };
-
-  const addVehicle = async () => {
-    if (!vForm.plate_number) return push("Plate number is required", "error");
+  const saveVehicle = async () => {
     setLoading(true);
     try {
-      await axios.post(`${API}/transport/vehicles`, vForm);
-      push("Vehicle added successfully");
-      setVForm({ plate_number: "", vehicle_type: "", capacity: "", driver_name: "" });
-      setShowVModal(false);
-      fetchData();
-    } catch { push("Error adding vehicle", "error"); }
+      const headers = { Authorization: `Bearer ${localStorage.getItem("erp_token")}` };
+      if (isEditingV) await axios.put(`${API}/transport/vehicles/${currentVId}`, vForm, { headers });
+      else await axios.post(`${API}/transport/vehicles`, vForm, { headers });
+      setShowVModal(false); resetVForm(); fetchData();
+      push("Success");
+    } catch { push("Error", "error"); }
     finally { setLoading(false); }
   };
 
-  const createShipment = async () => {
-    if (!sForm.vehicle_id || !sForm.order_id) return push("Vehicle and Order ID are required", "error");
-    if (!sForm.origin_lat || !sForm.dest_lat) return push("Please select route on map", "error");
-    
-    setLoading(true);
-    try {
-      await axios.post(`${API}/transport/shipments`, sForm);
-      push("Shipment dispatched!");
-      setSForm({ 
-        order_id: "", vehicle_id: "", route_details: "", estimated_delivery: "",
-        origin_lat: null, origin_lng: null, dest_lat: null, dest_lng: null, distance_km: 0
-      });
-      setShowSModal(false);
-      fetchData();
-    } catch { push("Error dispatching shipment", "error"); }
-    finally { setLoading(false); }
-  };
+  const resetVForm = () => { setVForm({ vehicle_number: "", vehicle_type: "Truck", capacity_kg: "", capacity_volume: "", driver_name: "", driver_phone: "", current_latitude: "", current_longitude: "", assigned_warehouse_id: "", status: "available" }); setIsEditingV(false); setCurrentVId(null); };
 
-  const updateStatus = async (id, status) => {
+  const updateShipmentStatus = async (id, status) => {
     try {
-      await axios.put(`${API}/transport/shipments/${id}/status`, { status });
+      const headers = { Authorization: `Bearer ${localStorage.getItem("erp_token")}` };
+      await axios.put(`${API}/transport/shipments/${id}/status`, { status }, { headers });
       push(`Shipment marked as ${status}`);
       fetchData();
-    } catch { push("Error updating status", "error"); }
+    } catch { push("Error", "error"); }
   };
 
   return (
@@ -146,138 +73,89 @@ export default function Transport({ push }) {
         <>
           <div className="section-header" style={{ marginBottom: 24 }}>
             <div className="section-title">Fleet Directory</div>
-            <button className="btn btn-primary" onClick={() => setShowVModal(true)}>＋ Register Vehicle</button>
+            <button className="btn btn-primary" onClick={() => { resetVForm(); setShowVModal(true); }}>＋ Register Vehicle</button>
           </div>
-
-          {showVModal && (
-            <Modal title="Register New Vehicle" onClose={() => setShowVModal(false)} onConfirm={addVehicle} loading={loading}>
-              <div className="form-grid" style={{ gridTemplateColumns: '1fr' }}>
-                <div className="form-group"><label>Plate Number</label><input value={vForm.plate_number} onChange={e => setVForm({...vForm, plate_number: e.target.value})} placeholder="e.g. MH-12-AB-1234" /></div>
-                <div className="form-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
-                  <div className="form-group"><label>Vehicle Type</label><input value={vForm.vehicle_type} onChange={e => setVForm({...vForm, vehicle_type: e.target.value})} placeholder="e.g. Truck, Van" /></div>
-                  <div className="form-group"><label>Capacity</label><input value={vForm.capacity} onChange={e => setVForm({...vForm, capacity: e.target.value})} placeholder="e.g. 5 Ton" /></div>
-                </div>
-                <div className="form-group"><label>Driver Name</label><input value={vForm.driver_name} onChange={e => setVForm({...vForm, driver_name: e.target.value})} /></div>
-              </div>
-            </Modal>
-          )}
-
           <div className="card">
             <div className="table-wrap">
               <table>
-                <thead><tr><th>Plate #</th><th>Type</th><th>Capacity</th><th>Driver</th><th>Status</th></tr></thead>
+                <thead><tr><th>Vehicle #</th><th>Type</th><th>Payload (kg)</th><th>Driver</th><th>Warehouse</th><th>Status</th><th>Actions</th></tr></thead>
                 <tbody>
                   {vehicles.map(v => (
                     <tr key={v.id}>
-                      <td style={{ fontWeight: 700 }}>{v.plate_number}</td>
+                      <td style={{ fontWeight: 700 }}>{v.vehicle_number}</td>
                       <td>{v.vehicle_type}</td>
-                      <td>{v.capacity}</td>
+                      <td>{v.capacity_kg} kg</td>
                       <td>{v.driver_name}</td>
-                      <td><span className={`pill ${v.status === 'Available' ? 'green' : 'yellow'}`}>{v.status}</span></td>
+                      <td>{v.warehouse_name || "-"}</td>
+                      <td><span className={`pill ${v.status === 'available' ? 'green' : 'blue'}`}>{v.status.toUpperCase()}</span></td>
+                      <td><button className="btn btn-secondary btn-sm" onClick={() => { setVForm({...v}); setCurrentVId(v.id); setIsEditingV(true); setShowVModal(true); }}>Edit</button></td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
           </div>
+          {showVModal && (
+            <Modal title={isEditingV ? "Edit" : "New"} onClose={() => setShowVModal(false)} onConfirm={saveVehicle} loading={loading}>
+              <div className="form-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
+                <div className="form-group"><label>Vehicle #</label><input value={vForm.vehicle_number} onChange={e => setVForm({...vForm, vehicle_number: e.target.value})} /></div>
+                <div className="form-group"><label>Type</label><select value={vForm.vehicle_type} onChange={e => setVForm({...vForm, vehicle_type: e.target.value})}><option value="Truck">Truck</option><option value="Van">Van</option></select></div>
+                <div className="form-group"><label>Capacity (kg)</label><input type="number" value={vForm.capacity_kg} onChange={e => setVForm({...vForm, capacity_kg: e.target.value})} /></div>
+                <div className="form-group"><label>Driver</label><input value={vForm.driver_name} onChange={e => setVForm({...vForm, driver_name: e.target.value})} /></div>
+                <div className="form-group"><label>Warehouse</label><select value={vForm.assigned_warehouse_id} onChange={e => setVForm({...vForm, assigned_warehouse_id: e.target.value})}><option value="">Select</option>{warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}</select></div>
+                <div className="form-group"><label>Status</label><select value={vForm.status} onChange={e => setVForm({...vForm, status: e.target.value})}><option value="available">Available</option><option value="maintenance">Maintenance</option></select></div>
+              </div>
+            </Modal>
+          )}
         </>
       )}
 
       {tab === "shipments" && (
         <>
           <div className="section-header" style={{ marginBottom: 24 }}>
-            <div className="section-title">Delivery Routes & Navigation</div>
-            <button className="btn btn-primary" onClick={() => setShowSModal(true)}>＋ Dispatch New Shipment</button>
+            <div className="section-title">Logistics Routes & Shipments</div>
           </div>
-
-          {showSModal && (
-            <Modal title="Dispatch Shipment" onClose={() => setShowSModal(false)} onConfirm={createShipment} loading={loading}>
-              <div className="form-grid" style={{ gridTemplateColumns: '1fr' }}>
-                <div className="form-group"><label>Select Route & Calculate Distance</label>
-                  <MapPicker onSelect={(data) => setSForm(prev => ({...prev, ...data}))} />
-                </div>
-                <div className="form-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
-                  <div className="form-group"><label>Order Reference #</label><input value={sForm.order_id} onChange={e => setSForm({...sForm, order_id: e.target.value})} placeholder="e.g. SO-1042" /></div>
-                  <div className="form-group"><label>Distance (kms)</label><input value={sForm.distance_km} readOnly style={{ background: 'var(--bg-card)' }} /></div>
-                </div>
-                <div className="form-group">
-                  <label>Assign Vehicle</label>
-                  <select value={sForm.vehicle_id} onChange={e => setSForm({...sForm, vehicle_id: e.target.value})} style={{ width: '100%', padding: 10, borderRadius: 8, background: 'var(--bg-base)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
-                    <option value="">Select Available Vehicle</option>
-                    {vehicles.filter(v => v.status === 'Available').map(v => (
-                      <option key={v.id} value={v.id}>{v.plate_number} ({v.driver_name})</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="form-group"><label>Navigation Notes</label><textarea value={sForm.route_details} onChange={e => setSForm({...sForm, route_details: e.target.value})} placeholder="Enter delivery instructions..." style={{ width: '100%', padding: 10, borderRadius: 8, background: 'var(--bg-base)', border: '1px solid var(--border)', color: 'var(--text-primary)', minHeight: 60 }} /></div>
-                <div className="form-group"><label>Est. Delivery Date</label><input type="date" value={sForm.estimated_delivery} onChange={e => setSForm({...sForm, estimated_delivery: e.target.value})} /></div>
-              </div>
-            </Modal>
-          )}
-
-         {selectedShipment && (
-  <Modal
-    title={`Navigation: Shipment #SHP-${selectedShipment.id}`}
-    onClose={() => setSelectedShipment(null)}
-    hideConfirm
-  >
-    <RouteViewer
-      shipment={selectedShipment}
-      onDistanceChange={(distanceKm) => {
-        setCalculatedDistance(distanceKm);
-      }}
-    />
-
-    <div
-      style={{
-        marginTop: 16,
-        display: "flex",
-        justifyContent: "space-between",
-      }}
-    >
-      <div>
-        <strong>From:</strong> {originName}
-      </div>
-
-      <div>
-        <strong>To:</strong> {destinationName}
-      </div>
-
-      <div>
-        <strong>Total Distance:</strong> {calculatedDistance} km
-      </div>
-    </div>
-  </Modal>
-)}
-
           <div className="card">
             <div className="table-wrap">
               <table>
-                <thead><tr><th>Shipment ID</th><th>Order #</th><th>Vehicle</th><th>Distance</th><th>Status</th><th>Actions</th></tr></thead>
+                <thead><tr><th>Shipment ID</th><th>Driver / Vehicle</th><th>Source</th><th>Destination</th><th>Distance</th><th>Status</th><th style={{ textAlign: 'right' }}>Navigation</th></tr></thead>
                 <tbody>
                   {shipments.map(s => (
                     <tr key={s.id}>
-                      <td style={{ color: "var(--accent)", fontWeight: 700 }}>#SHP-{s.id}</td>
-                      <td>{s.order_id}</td>
-                      <td>{s.plate_number} <br/><small style={{color:'var(--text-secondary)'}}>{s.driver_name}</small></td>
-                      <td>{s.distance_km ? `${s.distance_km} km` : 'N/A'}</td>
-                      <td><span className={`pill ${s.status === 'Pending' ? 'yellow' : s.status === 'In Transit' ? 'cyan' : 'green'}`}>{s.status}</span></td>
+                      <td style={{ color: "var(--accent)", fontWeight: 800 }}>#SHP-{s.id}</td>
                       <td>
-                        <div style={{ display: 'flex', gap: 8 }}>
-                          <button className="btn btn-secondary btn-sm" onClick={() => setSelectedShipment(s)}>📍 Map</button>
-                          {s.status === 'Pending' && <button className="btn btn-secondary btn-sm" onClick={() => updateStatus(s.id, 'In Transit')}>Start</button>}
-                          {s.status === 'In Transit' && <button className="btn btn-primary btn-sm" onClick={() => updateStatus(s.id, 'Delivered')}>Finish</button>}
+                        <div style={{ fontWeight: 700 }}>👤 {s.driver_name}</div>
+                        <div style={{ fontSize: 10, opacity: 0.6 }}>{s.vehicle_number}</div>
+                      </td>
+                      <td>{s.origin_name}</td>
+                      <td>{s.dest_name}</td>
+                      <td>{parseFloat(s.distance_km || 0).toFixed(1)} km</td>
+                      <td><span className={`pill ${s.status === 'Pending' ? 'yellow' : 'green'}`}>{s.status.toUpperCase()}</span></td>
+                      <td style={{ textAlign: 'right' }}>
+                        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                          <button className="btn btn-primary btn-sm" onClick={() => setSelectedShipment(s)}>📍 Map Route</button>
+                          {s.status === 'Pending' && <button className="btn btn-secondary btn-sm" onClick={() => updateShipmentStatus(s.id, 'Delivered')}>Mark Done</button>}
                         </div>
                       </td>
                     </tr>
                   ))}
+                  {shipments.length === 0 && <tr><td colSpan="7" style={{ textAlign: 'center', padding: 40, opacity: 0.5 }}>No active shipments. Automatic logistics will create them.</td></tr>}
                 </tbody>
               </table>
             </div>
           </div>
+          {selectedShipment && (
+            <Modal title={`Navigation: Shipment #SHP-${selectedShipment.id}`} onClose={() => setSelectedShipment(null)} hideConfirm>
+              <RouteViewer shipment={selectedShipment} onDistanceChange={setCalculatedDistance} />
+              <div style={{ marginTop: 16, display: "flex", justifyContent: "space-between", fontSize: 12 }}>
+                <div><strong>From:</strong> {selectedShipment.origin_name}</div>
+                <div><strong>To:</strong> {selectedShipment.dest_name}</div>
+                <div><strong>Total Distance:</strong> {parseFloat(selectedShipment.distance_km || 0).toFixed(1)} km</div>
+              </div>
+            </Modal>
+          )}
         </>
       )}
     </div>
   );
 }
-

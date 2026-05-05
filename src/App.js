@@ -18,6 +18,8 @@ import Warehouse from "./pages/Warehouse";
 import Finance from "./pages/Finance";
 import SupplierDashboard from "./pages/SupplierDashboard";
 import SupplierQuotations from "./pages/SupplierQuotations";
+import Customers from "./pages/Customers";
+import CustomerOrders from "./pages/CustomerOrders";
 
 // ── Toast Hook ──────────────────────────────────────────────────────────────
 function useToast() {
@@ -85,10 +87,11 @@ function App() {
         
         <div className="page">
           {activeModule === "dashboard" && <Dashboard products={products} />}
+          {activeModule === "customers" && <Customers push={push} />}
           {activeModule === "warehouse" && <Warehouse products={products} push={push} />}
           {activeModule === "inventory" && <Inventory products={products} onRefresh={fetchProducts} push={push} user={user} />}
           {activeModule === "purchases" && <Purchases products={products} onRefreshProducts={fetchProducts} push={push} />}
-          {activeModule === "sales" && <Sales push={push} />}
+          {activeModule === "customer-orders" && <CustomerOrders products={products} push={push} user={user} />}
           {activeModule === "transport" && <Transport push={push} />}
           {activeModule === "finance" && <Finance />}
           

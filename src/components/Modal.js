@@ -3,7 +3,7 @@ import React from "react";
 export default function Modal({ title, children, onClose, onConfirm, confirmText = "Save Changes", type = "primary", loading = false }) {
   
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay">
       <div className="modal-content" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
           <div className="modal-title">{title}</div>

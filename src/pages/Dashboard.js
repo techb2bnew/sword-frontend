@@ -1,12 +1,33 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import { API } from "../config";
 
 export default function Dashboard({ products = [] }) {
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      setLoading(true);
+      try {
+        const headers = { Authorization: `Bearer ${localStorage.getItem("erp_token")}` };
+        const res = await axios.get(`${API}/notifications`, { headers });
+        setNotifications(res.data);
+      } catch (err) {
+        console.error("Failed to fetch notifications", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchNotifications();
+  }, []);
+
   const stats = [
     { label: "Total Revenue", value: "₹4.8M", icon: "💰", trend: "+12.5%", up: true, c: "c1 i1" },
     { label: "Active Orders", value: "142", icon: "🛒", trend: "+8.2%", up: true, c: "c2 i2" },
     { label: "Products", value: products.length, icon: "📦", trend: "Inventory", up: true, c: "c3 i3" },
     { label: "Customers", value: "892", icon: "👥", trend: "+14.1%", up: true, c: "c4 i4" },
-    { label: "Alerts", value: "12", icon: "⚠️", trend: "Critical", up: false, c: "c5 i5" },
+    { label: "Alerts", value: notifications.filter(n => !n.is_read).length, icon: "⚠️", trend: "Pending", up: false, c: "c5 i5" },
   ];
 
   return (
@@ -39,21 +60,35 @@ export default function Dashboard({ products = [] }) {
         </div>
         <div className="card">
           <div className="card-body">
-            <div className="section-title">Recent Activity</div>
-            <div className="activity-list" style={{ marginTop: "15px" }}>
-              {[
-                { user: "System", action: "Stock updated for SKU-882", time: "2 mins ago" },
-                { user: "Rajesh", action: "Created Sales Order #SO-1042", time: "15 mins ago" },
-                { user: "Anita", action: "Marked PO #102 as Received", time: "1 hour ago" },
-              ].map((a, i) => (
-                <div key={i} style={{ display: "flex", gap: "12px", padding: "10px 0", borderBottom: i < 2 ? "1px solid var(--border)" : "none" }}>
-                  <div style={{ width: "32px", height: "32px", borderRadius: "50%", background: "var(--bg-base)", display: "flex", alignItems: "center", justifyCenter: "center", fontSize: "12px" }}>👤</div>
-                  <div>
-                    <div style={{ fontSize: "13px", fontWeight: 600 }}>{a.user} <span style={{ fontWeight: 400, color: "var(--text-muted)" }}>{a.action}</span></div>
-                    <div style={{ fontSize: "11px", color: "var(--text-muted)" }}>{a.time}</div>
+            <div className="section-title">Notifications & Recent Activity</div>
+            <div className="activity-list" style={{ marginTop: "15px", maxHeight: "300px", overflowY: "auto" }}>
+              {notifications.length > 0 ? (
+                notifications.map((n, i) => (
+                  <div key={n.id} style={{ display: "flex", gap: "12px", padding: "12px 0", borderBottom: i < notifications.length - 1 ? "1px solid var(--border)" : "none", opacity: n.is_read ? 0.6 : 1 }}>
+                    <div style={{ 
+                      width: "36px", 
+                      height: "36px", 
+                      borderRadius: "50%", 
+                      background: n.type === 'danger' ? 'rgba(239, 68, 68, 0.1)' : 'var(--bg-base)', 
+                      display: "flex", 
+                      alignItems: "center", 
+                      justifyContent: "center", 
+                      fontSize: "14px",
+                      border: `1px solid ${n.type === 'danger' ? '#ef4444' : 'var(--border)'}`
+                    }}>
+                      {n.type === 'danger' ? '⚠️' : '🔔'}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: "13px", fontWeight: 700 }}>{n.title}</div>
+                      <div style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: 2 }}>{n.message}</div>
+                      <div style={{ fontSize: "10px", color: "var(--text-muted)", marginTop: 4 }}>{new Date(n.created_at).toLocaleString()}</div>
+                    </div>
+                    {!n.is_read && <div style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--accent)", marginTop: 5 }}></div>}
                   </div>
-                </div>
-              ))}
+                ))
+              ) : (
+                <div style={{ textAlign: "center", padding: "20px", opacity: 0.5, fontSize: "13px" }}>No recent notifications.</div>
+              )}
             </div>
           </div>
         </div>

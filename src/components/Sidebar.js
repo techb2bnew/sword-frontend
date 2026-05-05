@@ -3,12 +3,13 @@ import React from "react";
 export default function Sidebar({ activeModule, setActiveModule, user, onLogout }) {
   const adminMenu = [
     { id: "dashboard", label: "Dashboard", icon: "📊" },
+    { id: "customers", label: "Customers", icon: "👥" },
     { id: "warehouse", label: "Warehouse", icon: "🏘️" },
     { id: "inventory", label: "Inventory", icon: "📦" },
     { id: "purchases", label: "Purchases", icon: "🤝" },
-    { id: "sales", label: "Sales Orders", icon: "🛒", badge: "28" },
+    { id: "customer-orders", label: "Customer Orders", icon: "🛒", badge: "New" },
     { id: "transport", label: "Transport", icon: "🚛" },
-    { id: "manufacturing", label: "Manufacturing", icon: "🏭" },
+    // { id: "manufacturing", label: "Manufacturing", icon: "🏭" },
     { id: "finance", label: "Finance & Accounts", icon: "💰" },
     { id: "reports", label: "Reports", icon: "📈" },
   ];
@@ -19,7 +20,15 @@ export default function Sidebar({ activeModule, setActiveModule, user, onLogout 
     { id: "inventory", label: "Products List", icon: "📦" },
   ];
 
-  const menu = user.role === 'supplier' ? supplierMenu : adminMenu;
+  const customerMenu = [
+    { id: "dashboard", label: "Dashboard", icon: "📊" },
+    { id: "customer-orders", label: "My Orders", icon: "🛒", badge: "Live" },
+    { id: "profile", label: "My Profile", icon: "👤" },
+  ];
+
+
+
+  const menu = user?.role === 'supplier' ? supplierMenu : user?.role === 'customer' ? customerMenu : adminMenu;
 
   return (
     <aside className="sidebar">
@@ -53,10 +62,10 @@ export default function Sidebar({ activeModule, setActiveModule, user, onLogout 
 
       <div className="sidebar-footer">
         <div className="user-card" onClick={onLogout}>
-          <div className="user-avatar">{user.username.charAt(0).toUpperCase()}</div>
+          <div className="user-avatar">{user?.username?.charAt(0).toUpperCase()}</div>
           <div className="user-info">
-            <div className="user-name">{user.username}</div>
-            <div className="user-role">{user.role}</div>
+            <div className="user-name">{user?.username}</div>
+            <div className="user-role">{user?.role}</div>
           </div>
           <span style={{ marginLeft: "auto", fontSize: 12, opacity: 0.5 }}>🚪</span>
         </div>

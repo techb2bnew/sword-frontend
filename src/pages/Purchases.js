@@ -542,18 +542,26 @@ export default function Purchases({ products, onRefreshProducts, push }) {
                       <td style={{ fontWeight: 600 }}>₹{q.unit_price}</td>
                       <td style={{ fontWeight: 700, color: 'var(--accent-4)' }}>₹{q.total_amount?.toLocaleString()}</td>
                       <td>
-                        {q.warehouse_name ? (
-                          <div style={{ fontSize: 12 }}>
-                            <strong>{q.warehouse_name}</strong>
-                            <div style={{ fontSize: 11, opacity: 0.7 }}>{q.rack_code} · {q.bin_code}</div>
+                        {q.allocations && q.allocations.length > 0 ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                            {q.allocations.map((al, idx) => (
+                              <div key={idx} style={{ fontSize: 11, background: 'rgba(99, 102, 241, 0.05)', padding: '4px 8px', borderRadius: 6, border: '1px solid rgba(99, 102, 241, 0.2)' }}>
+                                <div style={{ fontWeight: 700, color: 'var(--accent)' }}>{al.warehouse_name}</div>
+                                <div>{al.rack_code} · {al.bin_code} <span style={{ fontWeight: 700, marginLeft: 4 }}>({al.quantity})</span></div>
+                              </div>
+                            ))}
                           </div>
-                        ) : <span style={{ opacity: 0.5 }}>Pending Approval</span>}
+                        ) : <span style={{ opacity: 0.5 }}>Pending</span>}
                       </td>
                       <td>
-                        {q.barcode_id ? (
-                          <code style={{ background: 'var(--bg-base)', padding: '2px 6px', borderRadius: 4, fontSize: 11, color: 'var(--accent)' }}>
-                            {q.barcode_id}
-                          </code>
+                        {q.allocations && q.allocations.length > 0 ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                            {q.allocations.map((al, idx) => (
+                              <code key={idx} style={{ background: 'var(--bg-base)', padding: '2px 6px', borderRadius: 4, fontSize: 10, color: 'var(--accent)', whiteSpace: 'nowrap' }}>
+                                {al.barcode_id}
+                              </code>
+                            ))}
+                          </div>
                         ) : '—'}
                       </td>
                       <td>
@@ -581,7 +589,7 @@ export default function Purchases({ products, onRefreshProducts, push }) {
                     </tr>
                   ))}
                   {quotations.length === 0 && (
-                    <tr><td colSpan="10" style={{ textAlign: 'center', padding: 40 }}>No quotations received yet.</td></tr>
+                    <tr><td colSpan="12" style={{ textAlign: 'center', padding: 40 }}>No quotations received yet.</td></tr>
                   )}
                 </tbody>
               </table>
