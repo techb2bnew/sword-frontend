@@ -27,10 +27,11 @@ export default function Sidebar({ activeModule, setActiveModule, user, onLogout 
   ];
 
   const buyerMenu = [
-    { id: "buyer-dashboard", label: "Buyer Dashboard", icon: "🤝" },
-    { id: "buyer-suppliers", label: "My Suppliers", icon: "🏢" },
-    // { id: "buyer-quotations", label: "Quotations", icon: "📄" },
-    { id: "inventory", label: "Inventory", icon: "📦" },
+    { id: "buyer-overview",   label: "Dashboard",       icon: "📊" },
+    { id: "buyer-dashboard",  label: "Quotations",       icon: "📄" },
+    { id: "buyer-purchases",  label: "Purchase Orders",  icon: "🛒" },
+    { id: "buyer-inventory",  label: "My Inventory",     icon: "📦" },
+    { id: "buyer-suppliers",  label: "My Suppliers",     icon: "🏢" },
   ];
 
 

@@ -23,6 +23,10 @@ import CustomerOrders from "./pages/CustomerOrders";
 import BuyerDashboard from "./pages/BuyerDashboard";
 import BuyerQuotations from "./pages/BuyerQuotations";
 import BuyerSuppliers from "./pages/BuyerSuppliers";
+import BuyerReorders from "./pages/BuyerReorders";
+import BuyerInventory from "./pages/BuyerInventory";
+import BuyerOverview from "./pages/BuyerOverview";
+import BuyerPurchaseOrders from "./pages/BuyerPurchaseOrders";
 
 // ── Toast Hook ──────────────────────────────────────────────────────────────
 function useToast() {
@@ -62,7 +66,7 @@ function App() {
       if (parsedUser.role === 'supplier' && activeModule === 'dashboard') {
         setActiveModule('supplier-dashboard');
       } else if (parsedUser.role === 'buyer' && activeModule === 'dashboard') {
-        setActiveModule('buyer-dashboard');
+        setActiveModule('buyer-overview');
       }
     }
     fetchProducts();
@@ -105,12 +109,24 @@ function App() {
           {activeModule === "supplier-quotations" && <SupplierQuotations products={products} push={push} />}
           
           {/* Buyer Modules */}
+          {activeModule === "buyer-overview" && (
+            <BuyerOverview push={push} setActiveModule={setActiveModule} />
+          )}
+
           {activeModule === "buyer-dashboard" && (
             <BuyerDashboard
               products={products}
               push={push}
               user={user}
             />
+          )}
+
+          {activeModule === "buyer-reorders" && (
+            <BuyerReorders push={push} />
+          )}
+
+          {activeModule === "buyer-inventory" && (
+            <BuyerInventory push={push} user={user} />
           )}
 
           {activeModule === "buyer-suppliers" && (
@@ -123,6 +139,10 @@ function App() {
               push={push}
               user={user}
             />
+          )}
+
+          {activeModule === "buyer-purchases" && (
+            <BuyerPurchaseOrders push={push} />
           )}
           
           {["manufacturing", "reports"].includes(activeModule) && (
