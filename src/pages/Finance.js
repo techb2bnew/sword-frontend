@@ -2,12 +2,16 @@ import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { API } from "../config";
 import Modal from "../components/Modal";
+import generateMockData from "../mockData/financeData";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 export default function Finance({ push }) {
   const [stats, setStats] = useState({ cashOnHand: "£0", receivables: "£0", payables: "£0", netProfit: "£0" });
   const [ledger, setLedger] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [chartData, setChartData] = useState([]);
+  const [categoryData, setCategoryData] = useState([]);
   
   const [form, setForm] = useState({
     date: new Date().toISOString().split('T')[0],
@@ -21,15 +25,51 @@ export default function Finance({ push }) {
 
   const fetchData = useCallback(async () => {
     try {
-      const headers = { Authorization: `Bearer ${localStorage.getItem("erp_token")}` };
-      const [statsRes, ledgerRes] = await Promise.all([
-        axios.get(`${API}/finance/stats`, { headers }),
-        axios.get(`${API}/finance/ledger`, { headers })
-      ]);
-      setStats(statsRes.data);
-      setLedger(ledgerRes.data);
+      const { purchaseOrders, salesOrders, ledgerEntries } = generateMockData();
+      
+      // Calculate stats from mock data
+      const completedSales = salesOrders.filter(o => o.status === 'delivered').reduce((sum, o) => sum + parseFloat(o.total_amount || 0), 0);
+      const completedPurchases = purchaseOrders.filter(o => o.status === 'Received').reduce((sum, o) => sum + parseFloat(o.total_amount || 0), 0);
+      const pendingPurchases = purchaseOrders.filter(o => o.status !== 'Received' && o.status !== 'Cancelled').reduce((sum, o) => sum + parseFloat(o.total_amount || 0), 0);
+      const pendingSales = salesOrders.filter(o => o.status !== 'delivered' && o.status !== 'cancelled').reduce((sum, o) => sum + parseFloat(o.total_amount || 0), 0);
+      
+      const cashOnHand = completedSales - completedPurchases;
+      
+      setStats({
+        cashOnHand: `£${cashOnHand.toLocaleString('en-IN')}`,
+        receivables: `£${pendingSales.toLocaleString('en-IN')}`,
+        payables: `£${pendingPurchases.toLocaleString('en-IN')}`,
+        netProfit: `£${cashOnHand.toLocaleString('en-IN')}`
+      });
+
+      setLedger(ledgerEntries);
+      
+      // Process chart data
+      const monthlyData = {};
+      const categoryTotals = {};
+      
+      ledgerEntries.forEach(item => {
+        const month = new Date(item.date).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
+        if (!monthlyData[month]) monthlyData[month] = { month, income: 0, expenses: 0 };
+        
+        if (item.type === 'Credit') {
+          monthlyData[month].income += parseFloat(item.amount);
+        } else {
+          monthlyData[month].expenses += parseFloat(item.amount);
+        }
+        
+        if (!categoryTotals[item.category]) categoryTotals[item.category] = 0;
+        categoryTotals[item.category] += parseFloat(item.amount);
+      });
+      
+      const chartDataArray = Object.values(monthlyData).slice(-6); // Last 6 months
+      setChartData(chartDataArray);
+      
+      const categoryArray = Object.entries(categoryTotals).map(([category, amount]) => ({ name: category, value: amount })).slice(0, 5);
+      setCategoryData(categoryArray);
+      
     } catch {
-      push("Failed to load finance data", "error");
+      push("Using demo data", "info");
     }
   }, [push]);
 
@@ -74,7 +114,11 @@ export default function Finance({ push }) {
     <div className="fade-up">
       <div className="section-header" style={{ marginBottom: 24 }}>
         <div className="section-title">Finance & Automated Accounts</div>
-        <button className="btn btn-primary" onClick={() => setShowModal(true)}>＋ Record Manual Transaction</button>
+        <div style={{ display: 'flex', gap: 12 }}>
+          <button className="btn btn-secondary" onClick={() => setShowModal(true)}>＋ Record Transaction</button>
+          <button className="btn btn-outline">📊 Generate Report</button>
+          <button className="btn btn-outline">💳 Manage Payments</button>
+        </div>
       </div>
 
       <div className="stats-grid" style={{ gridTemplateColumns: "repeat(4,1fr)" }}>
@@ -87,7 +131,78 @@ export default function Finance({ push }) {
         ))}
       </div>
 
+      <div className="card" style={{ marginBottom: 24 }}>
+        <div className="card-header">
+          <h3>Financial Overview</h3>
+        </div>
+        <div style={{ height: 300, padding: 20 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="month" />
+              <YAxis />
+              <Tooltip formatter={(value) => [`£${value.toLocaleString()}`, '']} />
+              <Bar dataKey="income" fill="#10b981" name="Income" />
+              <Bar dataKey="expenses" fill="#ef4444" name="Expenses" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 24 }}>
+        <div className="card">
+          <div className="card-header">
+            <h3>Expense Categories</h3>
+          </div>
+          <div style={{ height: 250, padding: 20 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={categoryData}
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                >
+                  {categoryData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'][index % 5]} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(value) => [`£${value.toLocaleString()}`, 'Amount']} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="card">
+          <div className="card-header">
+            <h3>Recent Transactions</h3>
+          </div>
+          <div style={{ maxHeight: 250, overflowY: 'auto' }}>
+            {ledger.slice(0, 5).map((l) => (
+              <div key={l.id} style={{ padding: '12px 20px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: 14 }}>{l.description}</div>
+                  <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{new Date(l.date).toLocaleDateString()}</div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontWeight: 700, color: l.type === "Credit" ? "var(--accent-4)" : "var(--accent-5)" }}>
+                    {l.type === "Credit" ? "+" : "-"}£{parseFloat(l.amount).toLocaleString()}
+                  </div>
+                  <span className={`pill ${l.status === "Completed" ? "green" : "yellow"}`} style={{ fontSize: 10 }}>{l.status}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
       <div className="card">
+        <div className="card-header">
+          <h3>Transaction Ledger</h3>
+        </div>
         <div className="table-wrap">
           <table>
             <thead>

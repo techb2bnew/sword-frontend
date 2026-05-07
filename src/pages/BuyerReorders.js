@@ -1,154 +1,7 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { useMockStoreSnapshot } from "../mockData/mockHooks";
+import { actions } from "../mockData/mockStore";
 
-// ── Dummy Reorder History with consumption data ─────────────────────────────
-const DUMMY_REORDER_HISTORY = [
-  {
-    id: 1,
-    product_id: 101,
-    product_name: "Wheat Flour (Atta)",
-    supplier_id: 1,
-    supplier_name: "Agro Fresh Pvt Ltd",
-    quantity: 1200,
-    unit_price: 42,
-    total_amount: 50400,
-    status: "Received",
-    last_order_date: "2026-04-28",
-    notes: "Good quality, delivered on time",
-    consumption_per_day: 60,
-    days_in_stock: 40,
-    price_trend: -5,
-    reorder_point: 500,
-    lead_time_days: 5,
-  },
-  {
-    id: 2,
-    product_id: 102,
-    product_name: "Rice (Basmati)",
-    supplier_id: 1,
-    supplier_name: "Agro Fresh Pvt Ltd",
-    quantity: 800,
-    unit_price: 95,
-    total_amount: 76000,
-    status: "Received",
-    last_order_date: "2026-04-25",
-    notes: "Premium quality basmati",
-    consumption_per_day: 32,
-    days_in_stock: 50,
-    price_trend: 3,
-    reorder_point: 350,
-    lead_time_days: 7,
-  },
-  {
-    id: 3,
-    product_id: 103,
-    product_name: "Soybean Oil",
-    supplier_id: 1,
-    supplier_name: "Agro Fresh Pvt Ltd",
-    quantity: 300,
-    unit_price: 145,
-    total_amount: 43500,
-    status: "Accepted",
-    last_order_date: "2026-04-20",
-    notes: "Cold pressed oil",
-    consumption_per_day: 5,
-    days_in_stock: 9,
-    price_trend: 8,
-    reorder_point: 100,
-    lead_time_days: 5,
-  },
-  {
-    id: 4,
-    product_id: 104,
-    product_name: "Red Chilli Powder",
-    supplier_id: 2,
-    supplier_name: "Krishna Spices & Co",
-    quantity: 500,
-    unit_price: 280,
-    total_amount: 140000,
-    status: "Received",
-    last_order_date: "2026-04-30",
-    notes: "Fine grind, excellent quality",
-    consumption_per_day: 20,
-    days_in_stock: 42,
-    price_trend: -2,
-    reorder_point: 200,
-    lead_time_days: 6,
-  },
-  {
-    id: 5,
-    product_id: 105,
-    product_name: "Turmeric Powder",
-    supplier_id: 2,
-    supplier_name: "Krishna Spices & Co",
-    quantity: 350,
-    unit_price: 180,
-    total_amount: 63000,
-    status: "Received",
-    last_order_date: "2026-04-22",
-    notes: "",
-    consumption_per_day: 10,
-    days_in_stock: 62,
-    price_trend: 0,
-    reorder_point: 150,
-    lead_time_days: 6,
-  },
-  {
-    id: 6,
-    product_id: 106,
-    product_name: "Cumin Seeds",
-    supplier_id: 2,
-    supplier_name: "Krishna Spices & Co",
-    quantity: 200,
-    unit_price: 420,
-    total_amount: 84000,
-    status: "Confirmed",
-    last_order_date: "2026-04-18",
-    notes: "Fresh crop seeds",
-    consumption_per_day: 4,
-    days_in_stock: 70,
-    price_trend: 5,
-    reorder_point: 100,
-    lead_time_days: 8,
-  },
-  {
-    id: 7,
-    product_id: 107,
-    product_name: "BOPP Bags (25kg)",
-    supplier_id: 3,
-    supplier_name: "National Packaging Solutions",
-    quantity: 5000,
-    unit_price: 18,
-    total_amount: 90000,
-    status: "Received",
-    last_order_date: "2026-04-10",
-    notes: "Durable bags, 50 micron thickness",
-    consumption_per_day: 200,
-    days_in_stock: 42,
-    price_trend: -3,
-    reorder_point: 2000,
-    lead_time_days: 4,
-  },
-  {
-    id: 8,
-    product_id: 108,
-    product_name: "Corrugated Boxes",
-    supplier_id: 3,
-    supplier_name: "National Packaging Solutions",
-    quantity: 2000,
-    unit_price: 35,
-    total_amount: 70000,
-    status: "Received",
-    last_order_date: "2026-03-28",
-    notes: "Standard brown corrugated boxes",
-    consumption_per_day: 80,
-    days_in_stock: 40,
-    price_trend: 2,
-    reorder_point: 800,
-    lead_time_days: 5,
-  },
-];
-
-// ── Styles ──────────────────────────────────────────────────────────────────
 const styles = {
   container: {
     padding: "24px",
@@ -267,9 +120,9 @@ const styles = {
     backgroundColor: "#ffebee",
     color: "#c62828",
   },
-  pillOrange: {
-    backgroundColor: "#fff3e0",
-    color: "#e65100",
+  pillYellow: {
+    backgroundColor: "#fffde7",
+    color: "#f57f17",
   },
   summaryGrid: {
     display: "grid",
@@ -377,7 +230,6 @@ const styles = {
   },
 };
 
-// ── Helper Functions ────────────────────────────────────────────────────────
 function formatCurrency(val) {
   return "£" + (val || 0).toLocaleString("en-GB", { minimumFractionDigits: 0 });
 }
@@ -387,97 +239,62 @@ function formatDate(dateStr) {
   return new Date(dateStr).toLocaleDateString("en-GB");
 }
 
-// ── BuyerReorders Component ──────────────────────────────────────────────────
+function computeRecommendations(reorderHistory) {
+  return reorderHistory.map((item) => {
+    const daysUntilStockout = Number(item.days_in_stock || 0) - Number(item.lead_time_days || 0);
+    const recommendedQty = Math.ceil(Number(item.consumption_per_day || 0) * 30);
+    const potentialSavings = ((recommendedQty - Number(item.quantity || 0)) * Number(item.unit_price || 0) * 0.02).toFixed(0);
+
+    return {
+      product_id: item.product_id,
+      product_name: item.product_name,
+      supplier_name: item.supplier_name,
+      reason:
+        daysUntilStockout < 5
+          ? "⚠️ Urgent - Stock will run out soon"
+          : Number(item.price_trend || 0) < -3
+            ? "📉 Price dropping - Buy now"
+            : Number(item.price_trend || 0) > 5
+              ? "📈 Price rising - Consider bulk"
+              : "💡 Regular reorder due",
+      urgency:
+        daysUntilStockout < 5
+          ? "urgent"
+          : Number(item.price_trend || 0) < -3
+            ? "high"
+            : "medium",
+      recommended_qty: recommendedQty,
+      current_price: Number(item.unit_price || 0),
+      potential_savings: potentialSavings,
+    };
+  }).sort((a, b) => {
+    const urgencyOrder = { urgent: 0, high: 1, medium: 2 };
+    return urgencyOrder[a.urgency] - urgencyOrder[b.urgency];
+  });
+}
+
 export default function BuyerReorders({ push }) {
-  const [reorderHistory, setReorderHistory] = useState([]);
+  const reorderHistory = useMockStoreSnapshot((s) => s?.buyer?.reorderHistory || []);
   const [filteredReorders, setFilteredReorders] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterSupplier, setFilterSupplier] = useState("all");
   const [showQuickReorderModal, setShowQuickReorderModal] = useState(false);
   const [selectedReorder, setSelectedReorder] = useState(null);
-  const [reorderForm, setReorderForm] = useState({
-    quantity: "",
-    notes: "",
-  });
+  const [reorderForm, setReorderForm] = useState({ quantity: "", notes: "" });
   const [submitting, setSubmitting] = useState(false);
-  const [suppliers, setSuppliers] = useState([]);
   const [recommendations, setRecommendations] = useState([]);
   const [showBulkReorder, setShowBulkReorder] = useState(false);
   const [selectedForBulk, setSelectedForBulk] = useState([]);
 
-  // Fetch reorder history (using dummy data for prototype)
-  const fetchReorderHistory = useCallback(async () => {
-    try {
-      setLoading(true);
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      
-      setReorderHistory(DUMMY_REORDER_HISTORY);
-      setFilteredReorders(DUMMY_REORDER_HISTORY);
-
-      // Extract unique suppliers
-      const uniqueSuppliers = [...new Set(DUMMY_REORDER_HISTORY.map((r) => r.supplier_name))];
-      setSuppliers(uniqueSuppliers);
-    } catch (err) {
-      push("Failed to load reorder history", "error");
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  }, [push]);
-
-  useEffect(() => {
-    fetchReorderHistory();
-  }, [fetchReorderHistory]);
-
-  // Calculate smart reorder recommendations
-  useEffect(() => {
-    const smart_recommendations = DUMMY_REORDER_HISTORY.map((item) => {
-      const daysUntilStockout =
-        item.days_in_stock - item.lead_time_days;
-      const recommendedQty = Math.ceil(
-        item.consumption_per_day * 30
-      );
-      const potentialSavings = (
-        (recommendedQty - item.quantity) *
-        item.unit_price *
-        0.02
-      ).toFixed(0);
-
-      return {
-        product_id: item.product_id,
-        product_name: item.product_name,
-        supplier_name: item.supplier_name,
-        reason:
-          daysUntilStockout < 5
-            ? "⚠️ Urgent - Stock will run out soon"
-            : item.price_trend < -3
-            ? "📉 Price dropping - Buy now"
-            : item.price_trend > 5
-            ? "📈 Price rising - Consider bulk"
-            : "💡 Regular reorder due",
-        urgency:
-          daysUntilStockout < 5
-            ? "urgent"
-            : item.price_trend < -3
-            ? "high"
-            : "medium",
-        recommended_qty: recommendedQty,
-        current_price: item.unit_price,
-        potential_savings: potentialSavings,
-      };
-    });
-
-    setRecommendations(
-      smart_recommendations.sort((a, b) => {
-        const urgencyOrder = { urgent: 0, high: 1, medium: 2 };
-        return urgencyOrder[a.urgency] - urgencyOrder[b.urgency];
-      })
-    );
+  const suppliers = useMemo(() => {
+    const unique = new Set((reorderHistory || []).map((r) => r.supplier_name));
+    return Array.from(unique.values());
   }, [reorderHistory]);
 
-  // Filter and search logic
+  useEffect(() => {
+    setRecommendations(computeRecommendations(reorderHistory));
+  }, [reorderHistory]);
+
   useEffect(() => {
     let filtered = [...reorderHistory];
 
@@ -485,8 +302,8 @@ export default function BuyerReorders({ push }) {
       const term = searchTerm.toLowerCase();
       filtered = filtered.filter(
         (r) =>
-          r.product_name.toLowerCase().includes(term) ||
-          r.supplier_name.toLowerCase().includes(term)
+          String(r.product_name || "").toLowerCase().includes(term) ||
+          String(r.supplier_name || "").toLowerCase().includes(term)
       );
     }
 
@@ -495,9 +312,8 @@ export default function BuyerReorders({ push }) {
     }
 
     setFilteredReorders(filtered);
-  }, [searchTerm, filterSupplier, reorderHistory]);
+  }, [reorderHistory, searchTerm, filterSupplier]);
 
-  // Handle bulk reorder
   const handleBulkReorder = async () => {
     if (selectedForBulk.length === 0) {
       push("Please select items for bulk reorder", "error");
@@ -506,58 +322,44 @@ export default function BuyerReorders({ push }) {
 
     try {
       setSubmitting(true);
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      await new Promise((resolve) => setTimeout(resolve, 400));
 
-      selectedForBulk.forEach((productId) => {
-        const rec = recommendations.find(
-          (r) => r.product_id === productId
-        );
-        const item = DUMMY_REORDER_HISTORY.find(
-          (r) => r.product_id === productId
-        );
+      const itemsToCreate = selectedForBulk
+        .map((productId) => {
+          const rec = recommendations.find((r) => r.product_id === productId);
+          const item = reorderHistory.find((r) => r.product_id === productId);
+          if (!rec || !item) return null;
 
-        if (rec && item) {
-          const newReorder = {
-            id: Math.max(...DUMMY_REORDER_HISTORY.map((r) => r.id)) + 1,
+          return {
             product_id: item.product_id,
             product_name: item.product_name,
             supplier_id: item.supplier_id,
             supplier_name: item.supplier_name,
             quantity: rec.recommended_qty,
             unit_price: item.unit_price,
-            total_amount: rec.recommended_qty * item.unit_price,
             status: "Pending",
-            last_order_date: new Date()
-              .toISOString()
-              .split("T")[0],
+            last_order_date: new Date().toISOString().split("T")[0],
             notes: `Bulk order: ${rec.reason}`,
             consumption_per_day: item.consumption_per_day,
-            days_in_stock: rec.recommended_qty / item.consumption_per_day,
+            days_in_stock: rec.recommended_qty / Number(item.consumption_per_day || 1),
             price_trend: item.price_trend,
             reorder_point: item.reorder_point,
             lead_time_days: item.lead_time_days,
           };
-          DUMMY_REORDER_HISTORY.unshift(newReorder);
-        }
-      });
+        })
+        .filter(Boolean);
 
-      setReorderHistory([...DUMMY_REORDER_HISTORY]);
-      setFilteredReorders([...DUMMY_REORDER_HISTORY]);
-      push(
-        `${selectedForBulk.length} items bulk ordered successfully`,
-        "success"
-      );
+      actions.bulkCreateBuyerReorders(itemsToCreate);
+      push(`${itemsToCreate.length} items bulk ordered successfully`, "success");
       setShowBulkReorder(false);
       setSelectedForBulk([]);
     } catch (err) {
       push("Failed to create bulk order", "error");
-      console.error(err);
     } finally {
       setSubmitting(false);
     }
   };
 
-  // Open quick reorder modal
   const handleQuickReorder = (reorder) => {
     setSelectedReorder(reorder);
     setReorderForm({
@@ -567,50 +369,50 @@ export default function BuyerReorders({ push }) {
     setShowQuickReorderModal(true);
   };
 
-  // Submit quick reorder (dummy data prototype)
   const handleSubmitReorder = async () => {
-    if (!reorderForm.quantity || reorderForm.quantity <= 0) {
+    const qty = Number(reorderForm.quantity || 0);
+    if (!qty || qty <= 0) {
       push("Please enter a valid quantity", "error");
       return;
     }
 
     try {
       setSubmitting(true);
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      await new Promise((resolve) => setTimeout(resolve, 450));
 
-      // Create a new reorder entry (simulated)
-      const newReorder = {
-        id: Math.max(...DUMMY_REORDER_HISTORY.map((r) => r.id)) + 1,
+      const newEntry = actions.createBuyerReorderEntry({
         product_id: selectedReorder.product_id,
         product_name: selectedReorder.product_name,
         supplier_id: selectedReorder.supplier_id,
         supplier_name: selectedReorder.supplier_name,
-        quantity: parseInt(reorderForm.quantity),
+        quantity: qty,
         unit_price: selectedReorder.unit_price,
-        total_amount: parseInt(reorderForm.quantity) * selectedReorder.unit_price,
         status: "Pending",
         last_order_date: new Date().toISOString().split("T")[0],
         notes: reorderForm.notes || `Re-order of previous purchase (Qty: ${selectedReorder.quantity})`,
-      };
+        consumption_per_day: selectedReorder.consumption_per_day,
+        days_in_stock: qty / Number(selectedReorder.consumption_per_day || 1),
+        price_trend: selectedReorder.price_trend,
+        reorder_point: selectedReorder.reorder_point,
+        lead_time_days: selectedReorder.lead_time_days,
+      });
 
-      // Add to dummy history
-      DUMMY_REORDER_HISTORY.unshift(newReorder);
-      setReorderHistory([...DUMMY_REORDER_HISTORY]);
-      setFilteredReorders([...DUMMY_REORDER_HISTORY]);
-
-      push("Re-order created successfully", "success");
+      if (newEntry && newEntry.id) push("Re-order created successfully", "success");
       setShowQuickReorderModal(false);
       setReorderForm({ quantity: "", notes: "" });
-    } catch (err) {
+    } catch {
       push("Failed to create re-order", "error");
-      console.error(err);
     } finally {
       setSubmitting(false);
     }
   };
 
-  if (loading) {
+  const totalOrders = reorderHistory.length;
+  const totalSpent = reorderHistory.reduce((sum, r) => sum + Number(r.total_amount || 0), 0);
+  const uniqueProducts = new Set(reorderHistory.map((r) => r.product_id)).size;
+  const uniqueSuppliers = new Set(reorderHistory.map((r) => r.supplier_id)).size;
+
+  if (!reorderHistory) {
     return (
       <div style={styles.container}>
         <div style={styles.loading}>Loading reorder history...</div>
@@ -618,23 +420,13 @@ export default function BuyerReorders({ push }) {
     );
   }
 
-  // Summary stats
-  const totalOrders = reorderHistory.length;
-  const totalSpent = reorderHistory.reduce((sum, r) => sum + r.total_amount, 0);
-  const uniqueProducts = new Set(reorderHistory.map((r) => r.product_id)).size;
-  const uniqueSuppliers = new Set(reorderHistory.map((r) => r.supplier_id)).size;
-
   return (
     <div style={styles.container}>
-      {/* Header */}
       <div style={styles.header}>
         <h1 style={styles.title}>Reorder Management</h1>
-        <p style={styles.subtitle}>
-          Quick reorder from your previous purchases
-        </p>
+        <p style={styles.subtitle}>Quick reorder from your previous purchases</p>
       </div>
 
-      {/* Summary Cards */}
       <div style={styles.summaryGrid}>
         <div style={styles.summaryCard}>
           <div style={styles.summaryValue}>{totalOrders}</div>
@@ -654,13 +446,10 @@ export default function BuyerReorders({ push }) {
         </div>
       </div>
 
-      {/* Smart Recommendations */}
       {recommendations.length > 0 && (
         <div style={styles.card}>
           <div style={styles.cardHeader}>
-            <h2 style={{ margin: 0, fontSize: 18, fontWeight: 600 }}>
-              ⚡ Smart Reorder Recommendations
-            </h2>
+            <h2 style={{ margin: 0, fontSize: 18, fontWeight: 600 }}>⚡ Smart Reorder Recommendations</h2>
             <button
               onClick={() => setShowBulkReorder(true)}
               style={{
@@ -673,6 +462,7 @@ export default function BuyerReorders({ push }) {
               📦 Bulk Order
             </button>
           </div>
+
           <div style={styles.tableWrap}>
             <table style={styles.table}>
               <thead>
@@ -688,27 +478,15 @@ export default function BuyerReorders({ push }) {
                 </tr>
               </thead>
               <tbody>
-                {recommendations.map((rec, idx) => (
-                  <tr key={idx}>
+                {recommendations.map((rec) => (
+                  <tr key={rec.product_id}>
                     <td style={styles.td}>
                       <input
                         type="checkbox"
-                        checked={selectedForBulk.includes(
-                          rec.product_id
-                        )}
+                        checked={selectedForBulk.includes(rec.product_id)}
                         onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedForBulk([
-                              ...selectedForBulk,
-                              rec.product_id,
-                            ]);
-                          } else {
-                            setSelectedForBulk(
-                              selectedForBulk.filter(
-                                (id) => id !== rec.product_id
-                              )
-                            );
-                          }
+                          if (e.target.checked) setSelectedForBulk((p) => [...p, rec.product_id]);
+                          else setSelectedForBulk((p) => p.filter((id) => id !== rec.product_id));
                         }}
                       />
                     </td>
@@ -721,42 +499,27 @@ export default function BuyerReorders({ push }) {
                         style={{
                           ...styles.pill,
                           ...(rec.urgency === "urgent"
-                            ? { ...styles.pillRed }
+                            ? styles.pillRed
                             : rec.urgency === "high"
-                            ? styles.pillOrange
-                            : styles.pillBlue),
+                              ? styles.pillOrange
+                              : styles.pillBlue),
                         }}
                       >
                         {rec.reason}
                       </span>
                     </td>
                     <td style={styles.td}>{rec.recommended_qty} units</td>
+                    <td style={styles.td}>{formatCurrency(rec.recommended_qty * rec.current_price)}</td>
                     <td style={styles.td}>
-                      {formatCurrency(
-                        rec.recommended_qty * rec.current_price
-                      )}
-                    </td>
-                    <td style={styles.td}>
-                      <span
-                        style={{
-                          color: "#2e7d32",
-                          fontWeight: 600,
-                        }}
-                      >
-                        {formatCurrency(rec.potential_savings)}
-                      </span>
+                      <span style={{ color: "#2e7d32", fontWeight: 600 }}>{formatCurrency(rec.potential_savings)}</span>
                     </td>
                     <td style={styles.td}>
                       <button
                         onClick={() => {
-                          const item = DUMMY_REORDER_HISTORY.find(
-                            (r) => r.product_id === rec.product_id
-                          );
+                          const item = reorderHistory.find((r) => r.product_id === rec.product_id);
+                          if (!item) return;
                           setSelectedReorder(item);
-                          setReorderForm({
-                            quantity: rec.recommended_qty,
-                            notes: rec.reason,
-                          });
+                          setReorderForm({ quantity: rec.recommended_qty, notes: rec.reason });
                           setShowQuickReorderModal(true);
                         }}
                         style={{
@@ -777,7 +540,6 @@ export default function BuyerReorders({ push }) {
         </div>
       )}
 
-      {/* Controls */}
       <div style={styles.controlBar}>
         <input
           type="text"
@@ -786,11 +548,7 @@ export default function BuyerReorders({ push }) {
           onChange={(e) => setSearchTerm(e.target.value)}
           style={styles.searchInput}
         />
-        <select
-          value={filterSupplier}
-          onChange={(e) => setFilterSupplier(e.target.value)}
-          style={styles.filterSelect}
-        >
+        <select value={filterSupplier} onChange={(e) => setFilterSupplier(e.target.value)} style={styles.filterSelect}>
           <option value="all">All Suppliers</option>
           {suppliers.map((s) => (
             <option key={s} value={s}>
@@ -800,15 +558,10 @@ export default function BuyerReorders({ push }) {
         </select>
       </div>
 
-      {/* Order History Table */}
       <div style={styles.card}>
         <div style={styles.cardHeader}>
-          <h2 style={{ margin: 0, fontSize: 18, fontWeight: 600 }}>
-            Order History
-          </h2>
-          <span style={{ color: "#666", fontSize: 14 }}>
-            {filteredReorders.length} orders
-          </span>
+          <h2 style={{ margin: 0, fontSize: 18, fontWeight: 600 }}>Order History</h2>
+          <span style={{ color: "#666", fontSize: 14 }}>{filteredReorders.length} orders</span>
         </div>
 
         {filteredReorders.length === 0 ? (
@@ -845,44 +598,24 @@ export default function BuyerReorders({ push }) {
                         style={{
                           fontWeight: 600,
                           color:
-                            reorder.price_trend < 0
-                              ? "#2e7d32"
-                              : reorder.price_trend > 0
-                              ? "#c62828"
-                              : "#999",
+                            reorder.price_trend < 0 ? "#2e7d32" : reorder.price_trend > 0 ? "#c62828" : "#999",
                         }}
                       >
-                        {reorder.price_trend < 0
-                          ? `📉 ${reorder.price_trend}%`
-                          : reorder.price_trend > 0
-                          ? `📈 +${reorder.price_trend}%`
-                          : "➡️ 0%"}
+                        {reorder.price_trend < 0 ? `📉 ${reorder.price_trend}%` : reorder.price_trend > 0 ? `📈 +${reorder.price_trend}%` : "➡️ 0%"}
                       </span>
                     </td>
                     <td style={styles.td}>
-                      <div style={{ fontSize: 12, marginBottom: 4 }}>
-                        {reorder.days_in_stock} days stock
-                      </div>
+                      <div style={{ fontSize: 12, marginBottom: 4 }}>{reorder.days_in_stock} days stock</div>
                       <span
                         style={{
                           ...styles.pill,
-                          ...(reorder.days_in_stock < 5
-                            ? styles.pillRed
-                            : reorder.days_in_stock < 15
-                            ? styles.pillOrange
-                            : styles.pillGreen),
+                          ...(reorder.days_in_stock < 5 ? styles.pillRed : reorder.days_in_stock < 15 ? styles.pillOrange : styles.pillGreen),
                         }}
                       >
-                        {reorder.days_in_stock < 5
-                          ? "Critical"
-                          : reorder.days_in_stock < 15
-                          ? "Low"
-                          : "Healthy"}
+                        {reorder.days_in_stock < 5 ? "Critical" : reorder.days_in_stock < 15 ? "Low" : "Healthy"}
                       </span>
                     </td>
-                    <td style={styles.td}>
-                      {formatDate(reorder.last_order_date)}
-                    </td>
+                    <td style={styles.td}>{formatDate(reorder.last_order_date)}</td>
                     <td style={styles.td}>
                       <button
                         onClick={() => handleQuickReorder(reorder)}
@@ -908,17 +641,14 @@ export default function BuyerReorders({ push }) {
       <div
         style={{
           ...styles.modal,
-          ...(showQuickReorderModal && styles.modalActive),
+          ...(showQuickReorderModal ? styles.modalActive : {}),
         }}
         onClick={() => setShowQuickReorderModal(false)}
       >
         <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
           <div style={styles.modalHeader}>
             <h2 style={{ margin: 0, fontSize: 18 }}>Quick Re-order</h2>
-            <button
-              style={styles.closeBtn}
-              onClick={() => setShowQuickReorderModal(false)}
-            >
+            <button style={styles.closeBtn} onClick={() => setShowQuickReorderModal(false)}>
               ✕
             </button>
           </div>
@@ -933,91 +663,37 @@ export default function BuyerReorders({ push }) {
                   marginBottom: "16px",
                 }}
               >
-                <p style={{ margin: "0 0 8px 0", fontSize: 13, color: "#666" }}>
-                  Product:
-                </p>
-                <p style={{ margin: "0 0 12px 0", fontSize: 15, fontWeight: 600 }}>
-                  {selectedReorder.product_name}
-                </p>
-                <p style={{ margin: "0 0 8px 0", fontSize: 13, color: "#666" }}>
-                  Supplier:
-                </p>
-                <p style={{ margin: 0, fontSize: 15, fontWeight: 600 }}>
-                  {selectedReorder.supplier_name}
-                </p>
+                <p style={{ margin: "0 0 8px 0", fontSize: 13, color: "#666" }}>Product:</p>
+                <p style={{ margin: "0 0 12px 0", fontSize: 15, fontWeight: 600 }}>{selectedReorder.product_name}</p>
+                <p style={{ margin: "0 0 8px 0", fontSize: 13, color: "#666" }}>Supplier:</p>
+                <p style={{ margin: 0, fontSize: 15, fontWeight: 600 }}>{selectedReorder.supplier_name}</p>
               </div>
 
               <div style={styles.formGroup}>
                 <label style={styles.label}>Quantity</label>
-                <input
-                  type="number"
-                  min="1"
-                  value={reorderForm.quantity}
-                  onChange={(e) =>
-                    setReorderForm({
-                      ...reorderForm,
-                      quantity: e.target.value,
-                    })
-                  }
-                  style={styles.input}
-                />
+                <input type="number" min="1" value={reorderForm.quantity} onChange={(e) => setReorderForm((p) => ({ ...p, quantity: e.target.value }))} style={styles.input} />
               </div>
 
               <div style={styles.formGroup}>
-                <label style={styles.label}>
-                  Unit Price: {formatCurrency(selectedReorder.unit_price)}
-                </label>
-                <div
-                  style={{
-                    padding: "10px",
-                    backgroundColor: "#f9f9f9",
-                    borderRadius: "6px",
-                    fontSize: 14,
-                    color: "#666",
-                  }}
-                >
+                <label style={styles.label}>Unit Price: {formatCurrency(selectedReorder.unit_price)}</label>
+                <div style={{ padding: "10px", backgroundColor: "#f9f9f9", borderRadius: "6px", fontSize: 14, color: "#666" }}>
                   Estimated Total:{" "}
-                  <strong>
-                    {formatCurrency(
-                      (reorderForm.quantity || 0) * selectedReorder.unit_price
-                    )}
-                  </strong>
+                  <strong>{formatCurrency((Number(reorderForm.quantity || 0)) * Number(selectedReorder.unit_price || 0))}</strong>
                 </div>
               </div>
 
               <div style={styles.formGroup}>
                 <label style={styles.label}>Notes (Optional)</label>
-                <textarea
-                  value={reorderForm.notes}
-                  onChange={(e) =>
-                    setReorderForm({
-                      ...reorderForm,
-                      notes: e.target.value,
-                    })
-                  }
-                  style={{
-                    ...styles.input,
-                    minHeight: 60,
-                    fontFamily: "Inter",
-                  }}
-                />
+                <textarea value={reorderForm.notes} onChange={(e) => setReorderForm((p) => ({ ...p, notes: e.target.value }))} style={{ ...styles.input, minHeight: 60, fontFamily: "Inter" }} />
               </div>
             </div>
           )}
 
           <div style={styles.modalFooter}>
-            <button
-              onClick={() => setShowQuickReorderModal(false)}
-              style={{ ...styles.btn, ...styles.btnSecondary }}
-              disabled={submitting}
-            >
+            <button onClick={() => setShowQuickReorderModal(false)} style={{ ...styles.btn, ...styles.btnSecondary }} disabled={submitting}>
               Cancel
             </button>
-            <button
-              onClick={handleSubmitReorder}
-              style={{ ...styles.btn, ...styles.btnPrimary }}
-              disabled={submitting}
-            >
+            <button onClick={handleSubmitReorder} style={{ ...styles.btn, ...styles.btnPrimary }} disabled={submitting}>
               {submitting ? "Creating..." : "Create Re-order"}
             </button>
           </div>
@@ -1028,75 +704,38 @@ export default function BuyerReorders({ push }) {
       <div
         style={{
           ...styles.modal,
-          ...(showBulkReorder && styles.modalActive),
+          ...(showBulkReorder ? styles.modalActive : {}),
         }}
         onClick={() => setShowBulkReorder(false)}
       >
         <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
           <div style={styles.modalHeader}>
             <h2 style={{ margin: 0, fontSize: 18 }}>📦 Bulk Reorder</h2>
-            <button
-              style={styles.closeBtn}
-              onClick={() => setShowBulkReorder(false)}
-            >
+            <button style={styles.closeBtn} onClick={() => setShowBulkReorder(false)}>
               ✕
             </button>
           </div>
 
           <div style={styles.modalBody}>
-            <p style={{ color: "#666", marginBottom: 16 }}>
-              {selectedForBulk.length} items selected for bulk ordering
-            </p>
+            <p style={{ color: "#666", marginBottom: 16 }}>{selectedForBulk.length} items selected for bulk ordering</p>
 
-            <div
-              style={{
-                maxHeight: 300,
-                overflow: "auto",
-                marginBottom: 16,
-              }}
-            >
+            <div style={{ maxHeight: 300, overflow: "auto", marginBottom: 16 }}>
               {recommendations
                 .filter((r) => selectedForBulk.includes(r.product_id))
                 .map((rec, idx) => (
-                  <div
-                    key={idx}
-                    style={{
-                      padding: 12,
-                      backgroundColor: "#f9f9f9",
-                      borderRadius: 6,
-                      marginBottom: 8,
-                      fontSize: 13,
-                    }}
-                  >
-                    <div style={{ fontWeight: 600, marginBottom: 4 }}>
-                      {rec.product_name}
-                    </div>
+                  <div key={`${rec.product_id}-${idx}`} style={{ padding: 12, backgroundColor: "#f9f9f9", borderRadius: 6, marginBottom: 8, fontSize: 13 }}>
+                    <div style={{ fontWeight: 600, marginBottom: 4 }}>{rec.product_name}</div>
                     <div style={{ color: "#666", marginBottom: 4 }}>
                       {rec.recommended_qty} units × {formatCurrency(rec.current_price)} ={" "}
-                      <strong>
-                        {formatCurrency(
-                          rec.recommended_qty * rec.current_price
-                        )}
-                      </strong>
+                      <strong>{formatCurrency(rec.recommended_qty * rec.current_price)}</strong>
                     </div>
-                    <div style={{ color: "#2e7d32", fontSize: 12 }}>
-                      Save {formatCurrency(rec.potential_savings)}
-                    </div>
+                    <div style={{ color: "#2e7d32", fontSize: 12 }}>Save {formatCurrency(rec.potential_savings)}</div>
                   </div>
                 ))}
             </div>
 
-            <div
-              style={{
-                padding: 12,
-                backgroundColor: "#e8f5e9",
-                borderRadius: 6,
-                marginBottom: 16,
-              }}
-            >
-              <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>
-                Total Estimated Cost
-              </div>
+            <div style={{ padding: 12, backgroundColor: "#e8f5e9", borderRadius: 6, marginBottom: 16 }}>
+              <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>Total Estimated Cost</div>
               <div style={{ fontSize: 20, fontWeight: 700, color: "#1a1a1a" }}>
                 {formatCurrency(
                   recommendations
@@ -1108,18 +747,10 @@ export default function BuyerReorders({ push }) {
           </div>
 
           <div style={styles.modalFooter}>
-            <button
-              onClick={() => setShowBulkReorder(false)}
-              style={{ ...styles.btn, ...styles.btnSecondary }}
-              disabled={submitting}
-            >
+            <button onClick={() => setShowBulkReorder(false)} style={{ ...styles.btn, ...styles.btnSecondary }} disabled={submitting}>
               Cancel
             </button>
-            <button
-              onClick={handleBulkReorder}
-              style={{ ...styles.btn, ...styles.btnPrimary }}
-              disabled={submitting || selectedForBulk.length === 0}
-            >
+            <button onClick={handleBulkReorder} style={{ ...styles.btn, ...styles.btnPrimary }} disabled={submitting || selectedForBulk.length === 0}>
               {submitting ? "Processing..." : "Confirm Bulk Order"}
             </button>
           </div>

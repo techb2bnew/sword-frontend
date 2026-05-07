@@ -2,6 +2,9 @@ import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { API } from "./config";
 
+import { installMockAxios, resetPrototype } from "./mockData/mockApi";
+
+
 // Components
 import Toast from "./components/Toast";
 import Sidebar from "./components/Sidebar";
@@ -16,6 +19,16 @@ import Sales from "./pages/Sales";
 import Transport from "./pages/Transport";
 import Warehouse from "./pages/Warehouse";
 import Finance from "./pages/Finance";
+import FinanceDashboard from "./pages/FinanceDashboard";
+import FinancePurchaseOrders from "./pages/FinancePurchaseOrders";
+import FinanceSalesRevenue from "./pages/FinanceSalesRevenue";
+import FinanceTransportCosts from "./pages/FinanceTransportCosts";
+import FinanceWarehouseCosts from "./pages/FinanceWarehouseCosts";
+import FinancePayroll from "./pages/FinancePayroll";
+import Invoices from "./pages/Invoices";
+import Payments from "./pages/Payments";
+import Reports from "./pages/Reports";
+import Taxes from "./pages/Taxes";
 import SupplierDashboard from "./pages/SupplierDashboard";
 import SupplierQuotations from "./pages/SupplierQuotations";
 import Customers from "./pages/Customers";
@@ -58,7 +71,12 @@ function App() {
   }, [push]);
 
   useEffect(() => {
+    // Prototype: use shared frontend mock backend so UI is fully functional without server.
+    installMockAxios();
+    resetPrototype();
+
     const savedUser = localStorage.getItem("erp_user");
+
     if (savedUser) {
       const parsedUser = JSON.parse(savedUser);
       setUser(parsedUser);
@@ -67,6 +85,8 @@ function App() {
         setActiveModule('supplier-dashboard');
       } else if (parsedUser.role === 'buyer' && activeModule === 'dashboard') {
         setActiveModule('buyer-overview');
+      } else if (parsedUser.role === 'accountant' && activeModule === 'dashboard') {
+        setActiveModule('finance-dashboard');
       }
     }
     fetchProducts();
@@ -102,7 +122,19 @@ function App() {
           {activeModule === "purchases" && <Purchases products={products} onRefreshProducts={fetchProducts} push={push} />}
           {activeModule === "customer-orders" && <CustomerOrders products={products} push={push} user={user} />}
           {activeModule === "transport" && <Transport push={push} />}
-          {activeModule === "finance" && <Finance />}
+          
+          {/* Finance & Accounting Modules */}
+          {activeModule === "finance-dashboard" && <FinanceDashboard push={push} />}
+          {activeModule === "finance-po" && <FinancePurchaseOrders push={push} />}
+          {activeModule === "finance-sales" && <FinanceSalesRevenue push={push} />}
+          {activeModule === "finance-invoices" && <Invoices push={push} />}
+          {activeModule === "finance-payroll" && <FinancePayroll push={push} />}
+          {activeModule === "finance-transport" && <FinanceTransportCosts push={push} />}
+          {activeModule === "finance-warehouse" && <FinanceWarehouseCosts push={push} />}
+          {activeModule === "finance-ledger" && <Finance push={push} />}
+          {activeModule === "finance-payments" && <Payments push={push} />}
+          {activeModule === "finance-reports" && <Reports push={push} />}
+          {activeModule === "finance-taxes" && <Taxes push={push} />}
           
           {/* Supplier Modules */}
           {activeModule === "supplier-dashboard" && <SupplierDashboard user={user} products={products} push={push} setActiveModule={setActiveModule} />}

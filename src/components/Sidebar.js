@@ -34,9 +34,27 @@ export default function Sidebar({ activeModule, setActiveModule, user, onLogout 
     { id: "buyer-suppliers",  label: "My Suppliers",     icon: "🏢" },
   ];
 
+  const accountantMenu = [
+    { id: "finance-dashboard", label: "Finance Dashboard", icon: "💰" },
+    { id: "finance-po", label: "Purchase Orders", icon: "📦" },
+    { id: "finance-sales", label: "Sales & Revenue", icon: "💵" },
+    { id: "finance-invoices", label: "Invoices & Bills", icon: "📄" },
+    { id: "finance-payroll", label: "Payroll & Salaries", icon: "👥" },
+    { id: "finance-transport", label: "Transport Costs", icon: "🚛" },
+    { id: "finance-warehouse", label: "Warehouse Costs", icon: "🏘️" },
+    { id: "finance-ledger", label: "General Ledger", icon: "📊" },
+    { id: "finance-payments", label: "Payment Management", icon: "💳" },
+    { id: "finance-reports", label: "Financial Reports", icon: "📈" },
+    { id: "finance-taxes", label: "Tax Compliance", icon: "🧾" },
+  ];
 
 
-  const menu = user?.role === 'supplier' ? supplierMenu : user?.role === 'customer' ? customerMenu : user?.role === 'buyer' ? buyerMenu : adminMenu;
+
+  const menu = user?.role === 'supplier' ? supplierMenu : 
+               user?.role === 'customer' ? customerMenu : 
+               user?.role === 'buyer' ? buyerMenu : 
+               user?.role === 'accountant' ? accountantMenu : 
+               adminMenu;
 
   return (
     <aside className="sidebar">

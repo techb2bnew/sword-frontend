@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 
-
-
+import { installMockAxios } from "../mockData/mockApi";
 
 const API = process.env.REACT_APP_API_URL || "http://localhost:5001/api";
 
@@ -44,10 +43,14 @@ export default function BuyerQuotations() {
       setQuotations(quotationRes.data || []);
     } catch (error) {
       console.error("Fetch buyer quotation data error:", error);
+      setSuppliers([]);
+      setInventory([]);
+      setQuotations([]);
     }
   };
 
   useEffect(() => {
+    installMockAxios();
     fetchData();
   }, []);
 
