@@ -22,10 +22,15 @@ export default function AuthPage({ onLogin, push }) {
     try {
       if (tab === "login") {
         const res = await axios.post(`${API}/auth/login`, { email: form.email, password: form.password });
-        localStorage.setItem("erp_token", res.data.token);
-        localStorage.setItem("erp_user", JSON.stringify(res.data.user));
-        onLogin(res.data.user);
-        push("Welcome back, " + res.data.user.username + "!");
+        if (res.data && res.data.user) {
+          localStorage.setItem("erp_token", res.data.token);
+          localStorage.setItem("erp_user", JSON.stringify(res.data.user));
+          onLogin(res.data.user);
+          push("Welcome back, " + res.data.user.username + "!");
+        } else {
+          setError("Invalid response from server");
+        }
+
       } else {
         await axios.post(`${API}/auth/register`, { 
           username: form.username, 

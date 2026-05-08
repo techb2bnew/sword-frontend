@@ -48,19 +48,31 @@ export default function Sidebar({ activeModule, setActiveModule, user, onLogout 
     { id: "finance-taxes", label: "Tax Compliance", icon: "🧾" },
   ];
 
+  const warehouseManagerMenu = [
+    { id: "warehouse-manager-dashboard", label: "Ops Command", icon: "🏢" },
+    { id: "warehouse", label: "Layout Control", icon: "🏗️" },
+    { id: "inventory", label: "Inventory Logic", icon: "📦" },
+    { id: "transport", label: "Fleet Sync", icon: "🚛" },
+  ];
+
+
 
 
   const menu = user?.role === 'supplier' ? supplierMenu : 
                user?.role === 'customer' ? customerMenu : 
                user?.role === 'buyer' ? buyerMenu : 
                user?.role === 'accountant' ? accountantMenu : 
+               user?.role === 'warehouse_manager' ? warehouseManagerMenu :
                adminMenu;
+
 
   return (
     <aside className="sidebar">
       <div className="sidebar-logo">
-        <div className="sidebar-logo-icon">G</div>
-        <div className="sidebar-logo-text">GYRO<span>FOODS</span></div>
+        {/* <div className="sidebar-logo-icon">G</div>
+        <div className="sidebar-logo-text">GYRO<span>FOODS</span></div> */}
+        <div className="sidebar-logo-icon">S</div>
+        <div className="sidebar-logo-text">SW<span>ORD</span></div>
       </div>
 
       <div className="sidebar-section">

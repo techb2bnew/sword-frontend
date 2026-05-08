@@ -34,18 +34,66 @@ const seedState = () => {
     { id: 302, name: "Corrugated Boxes", barcode: "SKU-BOX-CORR", price: 35, type: "packaging", uom: "pcs" },
   ];
 
+  // Geo-Presets for easy warehouse creation
+  const cityPresets = {
+    "Pune, MH": { lat: 18.5204, lng: 73.8567 },
+    "Mumbai, MH": { lat: 19.0760, lng: 72.8777 },
+    "Delhi, NCR": { lat: 28.6139, lng: 77.2090 },
+    "Bangalore, KA": { lat: 12.9716, lng: 77.5946 },
+    "Hyderabad, TS": { lat: 17.3850, lng: 78.4867 },
+    "Chennai, TN": { lat: 13.0827, lng: 80.2707 },
+    "Kolkata, WB": { lat: 22.5726, lng: 88.3639 },
+    "Ahmedabad, GJ": { lat: 23.0225, lng: 72.5714 }
+  };
+
   // Warehouse + bins (Inventory module uses these)
   const warehouses = [
-    { id: 1, name: "Warehouse A" },
-    { id: 2, name: "Warehouse B" },
+    { id: 1, name: "Warehouse A", lat: 18.5089, lng: 73.9259 }, // Hadapsar Industrial Area, Pune
+    { id: 2, name: "Warehouse B", lat: 19.2295, lng: 72.8532 }, // Kandivali, Mumbai
   ];
 
   const bins = [
-    { id: 1, warehouse_id: 1, rack_code: "R-A1", bin_code: "B-101", status: "Available" },
-    { id: 2, warehouse_id: 1, rack_code: "R-A1", bin_code: "B-102", status: "Available" },
-    { id: 3, warehouse_id: 2, rack_code: "R-B1", bin_code: "B-201", status: "Available" },
-    { id: 4, warehouse_id: 2, rack_code: "R-B2", bin_code: "B-202", status: "Available" },
+    { id: 1, warehouse_id: 1, rack_code: "R-A1", bin_code: "B-101", status: "Available", barcode: "BIN-A1-101", capacity: 5000 },
+    { id: 2, warehouse_id: 1, rack_code: "R-A1", bin_code: "B-102", status: "Available", barcode: "BIN-A1-102", capacity: 5000 },
+    { id: 3, warehouse_id: 2, rack_code: "R-B1", bin_code: "B-201", status: "Available", barcode: "BIN-B1-201", capacity: 5000 },
+    { id: 4, warehouse_id: 2, rack_code: "R-B2", bin_code: "B-202", status: "Available", barcode: "BIN-B2-202", capacity: 5000 },
   ];
+
+  const lookupByBarcode = (barcode) => {
+    // Search in bins (Rack lookup)
+    const bin = bins.find(b => b.barcode === barcode);
+    if (bin) {
+      const warehouse = warehouses.find(w => w.id === bin.warehouse_id);
+      const product = inventory.find(p => p.bin_id === bin.id);
+      return {
+        type: "bin",
+        id: bin.id,
+        warehouse_name: warehouse?.name,
+        rack_code: bin.rack_code,
+        bin_code: bin.bin_code,
+        barcode: bin.barcode,
+        product: product || null
+      };
+    }
+
+    // Search in products (Item lookup)
+    const product = inventory.find(p => p.barcode === barcode);
+    if (product) {
+      const bin = bins.find(b => b.id === product.bin_id);
+      const warehouse = warehouses.find(w => w.id === product.warehouse_id);
+      return {
+        type: "product",
+        id: product.id,
+        name: product.name,
+        barcode: product.barcode,
+        stock: product.stock,
+        warehouse_name: warehouse?.name,
+        location: bin ? `${bin.rack_code}/${bin.bin_code}` : "Unassigned"
+      };
+    }
+
+    return null;
+  };
 
   // Inventory products entries (what /inventory/products returns)
   // Inventory.js expects to receive array with fields used in grouping:
@@ -261,7 +309,15 @@ const seedState = () => {
     },
     suppliers,
     products,
-    warehouse: { warehouses, bins },
+    warehouse: { 
+      warehouses, 
+      bins,
+      rack_positions: {
+        "R-A1": [0, 0, 0],
+        "R-B1": [15, 0, 0],
+        "R-B2": [15, 0, 10]
+      }
+    },
     inventory: { products: inventory },
     buyer: { quotations: buyerQuotations, purchaseOrders, reorderHistory },
     finance: { purchaseOrders, salesOrders, ledgerEntries },
@@ -275,6 +331,20 @@ const loadFromStorage = () => {
     const parsed = JSON.parse(raw);
 
     if (!parsed?.suppliers || !parsed?.inventory?.products) return seedState();
+    
+    // Ensure warehouse data exists in migrated states
+    if (!parsed.warehouse) parsed.warehouse = seedState().warehouse;
+    if (!parsed.inventory) parsed.inventory = seedState().inventory;
+
+    // Migration: Add barcodes to bins if missing
+    if (parsed.warehouse.bins) {
+      parsed.warehouse.bins = parsed.warehouse.bins.map(b => ({
+        ...b,
+        barcode: b.barcode || `BIN-${b.rack_code}-${b.bin_code}`,
+        capacity: b.capacity || 5000
+      }));
+    }
+
     if (!parsed?.buyer?.reorderHistory) parsed.buyer = { ...(parsed.buyer || {}), reorderHistory: seedState().buyer.reorderHistory };
 
     return parsed;
@@ -488,7 +558,162 @@ export const actions = {
 
   // Warehouse endpoints
   getWarehouses: () => state.warehouse.warehouses,
+  getCityPresets: () => state.warehouse.cityPresets || {
+    "Pune, MH": { lat: 18.5204, lng: 73.8567 },
+    "Mumbai, MH": { lat: 19.0760, lng: 72.8777 },
+    "Delhi, NCR": { lat: 28.6139, lng: 77.2090 },
+    "Bangalore, KA": { lat: 12.9716, lng: 77.5946 },
+    "Hyderabad, TS": { lat: 17.3850, lng: 78.4867 },
+    "Chennai, TN": { lat: 13.0827, lng: 80.2707 },
+    "Kolkata, WB": { lat: 22.5726, lng: 88.3639 },
+    "Ahmedabad, GJ": { lat: 23.0225, lng: 72.5714 }
+  },
+  createWarehouse: (payload) => {
+    const newId = Math.max(0, ...(state.warehouse.warehouses || []).map(w => w.id)) + 1;
+    let lat = Number(payload.lat);
+    let lng = Number(payload.lng);
+
+    // Lookup from preset if city is provided
+    if (payload.city) {
+      const presets = {
+        "Pune, MH": { lat: 18.5204, lng: 73.8567 },
+        "Mumbai, MH": { lat: 19.0760, lng: 72.8777 },
+        "Delhi, NCR": { lat: 28.6139, lng: 77.2090 },
+        "Bangalore, KA": { lat: 12.9716, lng: 77.5946 },
+        "Hyderabad, TS": { lat: 17.3850, lng: 78.4867 },
+        "Chennai, TN": { lat: 13.0827, lng: 80.2707 },
+        "Kolkata, WB": { lat: 22.5726, lng: 88.3639 },
+        "Ahmedabad, GJ": { lat: 23.0225, lng: 72.5714 }
+      };
+      if (presets[payload.city]) {
+        lat = presets[payload.city].lat;
+        lng = presets[payload.city].lng;
+      }
+    }
+
+    const newWarehouse = {
+      id: newId,
+      name: payload.name || `Warehouse ${newId}`,
+      lat: lat || 18.5204,
+      lng: lng || 73.8567
+    };
+    state.warehouse.warehouses = [...(state.warehouse.warehouses || []), newWarehouse];
+    persist();
+    listeners.forEach((l) => l());
+    return newWarehouse;
+  },
   getBins: () => state.warehouse.bins,
+  createRack: (payload) => {
+    const warehouse_id = Number(payload.warehouse_id);
+    const rack_code = payload.rack_code;
+    const bin_count = Number(payload.bin_count || 4);
+    
+    const warehouse = state.warehouse.warehouses.find(w => w.id === warehouse_id);
+    const baseLat = warehouse?.lat || 18.5089;
+    const baseLng = warehouse?.lng || 73.9259;
+
+    const newBins = [];
+    const baseId = Math.max(0, ...(state.warehouse.bins || []).map(b => b.id)) + 1;
+    
+    // Logic for geolocation offset (approximate)
+    const latMeters = 111111;
+    const lngMeters = 111111 * Math.cos(baseLat * Math.PI / 180);
+
+    for (let i = 1; i <= bin_count; i++) {
+      // Default offset for new racks is [0, 0, 0] in 3D
+      const binLat = baseLat; 
+      const binLng = baseLng;
+
+      newBins.push({
+        id: baseId + i - 1,
+        warehouse_id: warehouse_id,
+        rack_code: rack_code,
+        bin_code: `B-${String(i).padStart(2, '0')}`,
+        status: "Available",
+        lat: binLat,
+        lng: binLng
+      });
+    }
+    
+    state.warehouse.bins = [...(state.warehouse.bins || []), ...newBins];
+    
+    // Initialize position and geo
+    if (!state.warehouse.rack_positions) state.warehouse.rack_positions = {};
+    state.warehouse.rack_positions[rack_code] = [0, 0, 0];
+
+    persist();
+    listeners.forEach((l) => l());
+    return newBins;
+  },
+  updateRackPosition: (rackCode, position) => {
+    if (!state.warehouse.rack_positions) state.warehouse.rack_positions = {};
+    state.warehouse.rack_positions[rackCode] = position;
+
+    // Also update the geo-coordinates of all bins in this rack
+    const bins = state.warehouse.bins || [];
+    const rackBins = bins.filter(b => b.rack_code === rackCode);
+    if (rackBins.length > 0) {
+      const warehouse = state.warehouse.warehouses.find(w => w.id === rackBins[0].warehouse_id);
+      if (warehouse) {
+        const latMeters = 111111;
+        const lngMeters = 111111 * Math.cos(warehouse.lat * Math.PI / 180);
+        
+        state.warehouse.bins = bins.map(b => {
+          if (b.rack_code === rackCode) {
+            return {
+              ...b,
+              lat: (warehouse.lat - (position[2] / latMeters)).toFixed(7),
+              lng: (warehouse.lng + (position[0] / lngMeters)).toFixed(7)
+            };
+          }
+          return b;
+        });
+      }
+    }
+
+    persist();
+    listeners.forEach((l) => l());
+    return true;
+  },
+  lookupByBarcode: (barcode) => {
+    if (!barcode) return null;
+    const search = String(barcode).toUpperCase();
+    
+    // Search in bins (Rack lookup)
+    const bin = (state.warehouse.bins || []).find(b => String(b.barcode).toUpperCase() === search);
+    if (bin) {
+      const warehouse = (state.warehouse.warehouses || []).find(w => w.id === bin.warehouse_id);
+      const product = (state.inventory.products || []).find(p => p.bin_id === bin.id);
+      return {
+        type: "bin",
+        id: bin.id,
+        warehouse_id: bin.warehouse_id,
+        warehouse_name: warehouse?.name,
+        rack_code: bin.rack_code,
+        bin_code: bin.bin_code,
+        barcode: bin.barcode,
+        product: product || null
+      };
+    }
+
+    // Search in products (Item lookup)
+    const product = (state.inventory.products || []).find(p => String(p.barcode).toUpperCase() === search);
+    if (product) {
+      const bin = (state.warehouse.bins || []).find(b => b.id === product.bin_id);
+      const warehouse = (state.warehouse.warehouses || []).find(w => w.id === product.warehouse_id);
+      return {
+        type: "product",
+        id: product.id,
+        name: product.name,
+        barcode: product.barcode,
+        stock: product.stock,
+        warehouse_name: warehouse?.name,
+        location: bin ? `${bin.rack_code}/${bin.bin_code}` : "Unassigned"
+      };
+    }
+
+    return null;
+  },
   getPurchasesSuppliers: () => state.suppliers,
 
   // tokens passthrough

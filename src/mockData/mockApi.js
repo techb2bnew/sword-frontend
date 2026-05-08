@@ -1,18 +1,24 @@
 import axios from "axios";
 import { actions, getMockState, subscribe, resetMockState } from "./mockStore";
 
-const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:5001/api";
+const API_BASE = "http://127.0.0.1:5001/api";
+
 
 // Helper to simulate axios response shape
 const ok = (data) => ({ data });
 
 const toPath = (url) => {
-  // url may be absolute (API_BASE + route) or relative
   if (typeof url !== "string") return "";
-  if (url.startsWith(API_BASE)) return url.slice(API_BASE.length);
-  // also handle http://localhost:5001/api prefix variations
-  return url.replace(API_BASE, "");
+  let path = url;
+  if (url.startsWith(API_BASE)) {
+    path = url.slice(API_BASE.length);
+  } else if (url.includes("/api")) {
+    path = url.split("/api")[1];
+  }
+  if (!path.startsWith("/")) path = "/" + path;
+  return path;
 };
+
 
 const matchJson = (path, regex) => {
   const m = path.match(regex);
@@ -22,30 +28,41 @@ const matchJson = (path, regex) => {
 // Core mock handler
 export async function mockRequest(method, url, bodyOrConfig, maybeConfig) {
   const path = toPath(url);
-  const body = method.toLowerCase() === "get" || method.toLowerCase() === "delete" ? undefined : (bodyOrConfig || {});
-  const config = (method.toLowerCase() === "get" || method.toLowerCase() === "delete") ? bodyOrConfig : (maybeConfig || bodyOrConfig || {});
+  let body = method.toLowerCase() === "get" || method.toLowerCase() === "delete" ? undefined : (bodyOrConfig || {});
+  
+  // Axios often sends body as string in interceptors
+  if (typeof body === "string") {
+    try { body = JSON.parse(body); } catch (e) { /* ignore */ }
+  }
+
+  const config = maybeConfig || bodyOrConfig || {};
+
 
   // AUTH
   if (path === "/auth/login" && method.toLowerCase() === "post") {
-    // Accept any credentials
+    // Accept any credentials, but tailor role for specific demo emails
     const token = "mock-jwt-token";
+    let role = "buyer"; // default
+    let username = "Demo User";
+
+    if (body?.email === "manager@sword.com") {
+      role = "warehouse_manager";
+      username = "Chief Warehouse Manager";
+    }
+
     const user = {
-      id: 1,
-      username: "Demo User",
-      role: "buyer",
+      id: body?.email === "manager@sword.com" ? 99 : 1,
+      username: username,
+      role: role,
       email: body?.email || "demo@example.com",
     };
     localStorage.setItem("erp_token", token);
     localStorage.setItem("erp_user", JSON.stringify(user));
 
-    return ok({ token });
+    return ok({ token, user });
   }
 
-  // For app code that stores localStorage token under different key (BuyerQuotations uses `token` key)
-  if (path === "/auth/login" && method.toLowerCase() === "post") {
-    return ok({ token: "mock-token" });
-  }
-
+  // WAREHOUSE / BINS
   // BUYER QUOTATIONS
   if (path === "/buyer-quotations" && method.toLowerCase() === "get") {
     return ok(actions.getBuyerQuotations());
@@ -97,8 +114,34 @@ export async function mockRequest(method, url, bodyOrConfig, maybeConfig) {
     return ok(getMockState().warehouse.warehouses);
   }
 
+  if (path === "/warehouse/city-presets" && method.toLowerCase() === "get") {
+    return ok(actions.getCityPresets());
+  }
+
+  if (path === "/warehouse" && method.toLowerCase() === "post") {
+    return ok(actions.createWarehouse(body));
+  }
+
   if (path === "/warehouse/bins" && method.toLowerCase() === "get") {
     return ok(getMockState().warehouse.bins);
+  }
+
+  if (path === "/warehouse/bins/bulk" && method.toLowerCase() === "post") {
+    return ok(actions.createRack(body));
+  }
+
+  if (path === "/warehouse/rack-positions" && method.toLowerCase() === "get") {
+    return ok(getMockState().warehouse.rack_positions || {});
+  }
+
+  if (path === "/warehouse/rack-positions" && method.toLowerCase() === "post") {
+    return ok(actions.updateRackPosition(body.rackCode, body.position));
+  }
+
+  if (path === "/inventory/lookup" && method.toLowerCase() === "get") {
+    // lookup?barcode=XYZ
+    const barcode = config.params?.barcode;
+    return ok(actions.lookupByBarcode(barcode));
   }
 
   // Purchases suppliers (Inventory module needs this)

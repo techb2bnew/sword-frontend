@@ -40,6 +40,8 @@ import BuyerReorders from "./pages/BuyerReorders";
 import BuyerInventory from "./pages/BuyerInventory";
 import BuyerOverview from "./pages/BuyerOverview";
 import BuyerPurchaseOrders from "./pages/BuyerPurchaseOrders";
+import WarehouseManagerDashboard from "./pages/WarehouseManagerDashboard";
+
 
 // ── Toast Hook ──────────────────────────────────────────────────────────────
 function useToast() {
@@ -77,18 +79,26 @@ function App() {
 
     const savedUser = localStorage.getItem("erp_user");
 
-    if (savedUser) {
-      const parsedUser = JSON.parse(savedUser);
-      setUser(parsedUser);
-      // Default module based on role
-      if (parsedUser.role === 'supplier' && activeModule === 'dashboard') {
-        setActiveModule('supplier-dashboard');
-      } else if (parsedUser.role === 'buyer' && activeModule === 'dashboard') {
-        setActiveModule('buyer-overview');
-      } else if (parsedUser.role === 'accountant' && activeModule === 'dashboard') {
-        setActiveModule('finance-dashboard');
+    if (savedUser && savedUser !== "undefined") {
+      try {
+        const parsedUser = JSON.parse(savedUser);
+        setUser(parsedUser);
+        // Default module based on role
+        if (parsedUser.role === 'supplier' && activeModule === 'dashboard') {
+          setActiveModule('supplier-dashboard');
+        } else if (parsedUser.role === 'buyer' && activeModule === 'dashboard') {
+          setActiveModule('buyer-overview');
+        } else if (parsedUser.role === 'accountant' && activeModule === 'dashboard') {
+          setActiveModule('finance-dashboard');
+        } else if (parsedUser.role === 'warehouse_manager' && activeModule === 'dashboard') {
+          setActiveModule('warehouse-manager-dashboard');
+        }
+      } catch (e) {
+        console.error("Corrupted user data", e);
+        localStorage.removeItem("erp_user");
       }
     }
+
     fetchProducts();
   }, [fetchProducts]);
 
@@ -176,6 +186,11 @@ function App() {
           {activeModule === "buyer-purchases" && (
             <BuyerPurchaseOrders push={push} />
           )}
+
+          {activeModule === "warehouse-manager-dashboard" && (
+            <WarehouseManagerDashboard products={products} push={push} user={user} />
+          )}
+
           
           {["manufacturing", "reports"].includes(activeModule) && (
             <div className="empty-state">
