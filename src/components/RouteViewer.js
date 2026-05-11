@@ -110,7 +110,7 @@ export default function RouteViewer({ shipment, onDistanceChange }) {
   return (
     <>
       <div style={{ marginBottom: "10px", fontSize: "14px", fontWeight: "600" }}>
-        Distance: {calculatedDistance} km
+        Distance: {parseFloat(calculatedDistance).toFixed(1)} km
       </div>
 
       <div style={{ height: "400px", width: "100%", borderRadius: "12px", overflow: "hidden", border: "1px solid var(--border)" }}>

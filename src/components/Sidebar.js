@@ -6,6 +6,7 @@ export default function Sidebar({ activeModule, setActiveModule, user, onLogout 
     { id: "customers", label: "Customers", icon: "👥" },
     { id: "warehouse", label: "Warehouse", icon: "🏘️" },
     { id: "inventory", label: "Inventory", icon: "📦" },
+    { id: "advanced-inventory", label: "Advanced Inventory", icon: "🏭" },
     { id: "purchases", label: "Purchases", icon: "🤝" },
     { id: "customer-orders", label: "Customer Orders", icon: "🛒", badge: "New" },
     { id: "transport", label: "Transport", icon: "🚛" },
@@ -48,10 +49,15 @@ export default function Sidebar({ activeModule, setActiveModule, user, onLogout 
     { id: "finance-taxes", label: "Tax Compliance", icon: "🧾" },
   ];
 
+  const driverMenu = [
+    { id: "driver-dashboard", label: "My Dashboard", icon: "🚛" },
+  ];
+
   const warehouseManagerMenu = [
     { id: "warehouse-manager-dashboard", label: "Ops Command", icon: "🏢" },
+    { id: "advanced-inventory", label: "Advanced Inventory", icon: "📦" },
     { id: "warehouse", label: "Layout Control", icon: "🏗️" },
-    { id: "inventory", label: "Inventory Logic", icon: "📦" },
+    { id: "inventory", label: "Inventory Logic", icon: "📊" },
     { id: "transport", label: "Fleet Sync", icon: "🚛" },
   ];
 
@@ -63,6 +69,7 @@ export default function Sidebar({ activeModule, setActiveModule, user, onLogout 
                user?.role === 'buyer' ? buyerMenu : 
                user?.role === 'accountant' ? accountantMenu : 
                user?.role === 'warehouse_manager' ? warehouseManagerMenu :
+               user?.role === 'driver' ? driverMenu :
                adminMenu;
 
 

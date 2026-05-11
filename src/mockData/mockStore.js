@@ -300,6 +300,73 @@ const seedState = () => {
     { id: 2000001, date: isoDate(getDate(45)), description: "Cost of Goods - PO#1", type: "Debit", amount: 15000, status: "Completed", category: "Cost of Goods", source: "auto", reference: "PO#1" },
   ];
 
+  // ── Advanced Inventory seed data ──────────────────────────────────────────
+  const advBatches = [
+    { id: 1, product_id: 1001, product_name: "Wheat Flour (Atta)", batch_number: "BATCH-2026-001", lot_number: "LOT-WH-A01", warehouse_id: 1, warehouse_name: "Warehouse A", bin_id: 1, bin_location: "R-A1/B-101", quantity_received: 500, quantity_available: 420, quantity_consumed: 80, best_before_date: isoDate(getDate(-5)), manufacture_date: "2026-01-15", supplier_id: 1, supplier_name: "Agro Fresh Pvt Ltd", status: "active", created_at: "2026-01-20", notes: "Premium grade wheat flour" },
+    { id: 2, product_id: 1001, product_name: "Wheat Flour (Atta)", batch_number: "BATCH-2026-002", lot_number: "LOT-WH-A02", warehouse_id: 1, warehouse_name: "Warehouse A", bin_id: 1, bin_location: "R-A1/B-101", quantity_received: 600, quantity_available: 580, quantity_consumed: 20, best_before_date: "2026-09-15", manufacture_date: "2026-03-15", supplier_id: 1, supplier_name: "Agro Fresh Pvt Ltd", status: "active", created_at: "2026-03-20", notes: "" },
+    { id: 3, product_id: 1101, product_name: "Rice (Basmati)", batch_number: "BATCH-2026-003", lot_number: "LOT-RC-B01", warehouse_id: 1, warehouse_name: "Warehouse A", bin_id: 2, bin_location: "R-A1/B-102", quantity_received: 400, quantity_available: 310, quantity_consumed: 90, best_before_date: "2026-12-01", manufacture_date: "2026-02-01", supplier_id: 1, supplier_name: "Agro Fresh Pvt Ltd", status: "active", created_at: "2026-02-05", notes: "Aged basmati, premium" },
+    { id: 4, product_id: 1102, product_name: "Rice (Basmati)", batch_number: "BATCH-2026-004", lot_number: "LOT-RC-B02", warehouse_id: 2, warehouse_name: "Warehouse B", bin_id: 4, bin_location: "R-B2/B-202", quantity_received: 200, quantity_available: 120, quantity_consumed: 80, best_before_date: isoDate(getDate(12)), manufacture_date: "2025-12-10", supplier_id: 1, supplier_name: "Agro Fresh Pvt Ltd", status: "active", created_at: "2025-12-15", notes: "" },
+    { id: 5, product_id: 1201, product_name: "Soybean Oil", batch_number: "BATCH-2026-005", lot_number: "LOT-OIL-01", warehouse_id: 1, warehouse_name: "Warehouse A", bin_id: 1, bin_location: "R-A1/B-101", quantity_received: 100, quantity_available: 48, quantity_consumed: 52, best_before_date: isoDate(getDate(3)), manufacture_date: "2025-11-01", supplier_id: 1, supplier_name: "Agro Fresh Pvt Ltd", status: "active", created_at: "2025-11-05", notes: "Cold pressed" },
+    { id: 6, product_id: 2001, product_name: "Red Chilli Powder", batch_number: "BATCH-2026-006", lot_number: "LOT-SP-C01", warehouse_id: 2, warehouse_name: "Warehouse B", bin_id: 3, bin_location: "R-B1/B-201", quantity_received: 250, quantity_available: 240, quantity_consumed: 10, best_before_date: "2027-04-30", manufacture_date: "2026-04-01", supplier_id: 2, supplier_name: "Krishna Spices & Co", status: "active", created_at: "2026-04-05", notes: "Fine grind, Grade A" },
+    { id: 7, product_id: 2101, product_name: "Turmeric Powder", batch_number: "BATCH-2026-007", lot_number: "LOT-SP-T01", warehouse_id: 1, warehouse_name: "Warehouse A", bin_id: 2, bin_location: "R-A1/B-102", quantity_received: 150, quantity_available: 80, quantity_consumed: 70, best_before_date: isoDate(getDate(25)), manufacture_date: "2025-10-01", supplier_id: 2, supplier_name: "Krishna Spices & Co", status: "active", created_at: "2025-10-05", notes: "" },
+    { id: 8, product_id: 3001, product_name: "BOPP Bags (25kg)", batch_number: "BATCH-2026-008", lot_number: "LOT-PK-B01", warehouse_id: 1, warehouse_name: "Warehouse A", bin_id: 1, bin_location: "R-A1/B-101", quantity_received: 3000, quantity_available: 950, quantity_consumed: 2050, best_before_date: null, manufacture_date: "2026-01-10", supplier_id: 3, supplier_name: "National Packaging Solutions", status: "active", created_at: "2026-01-15", notes: "50 micron thickness" },
+    { id: 9, product_id: 2201, product_name: "Cumin Seeds", batch_number: "BATCH-2026-009", lot_number: "LOT-SP-CU1", warehouse_id: 2, warehouse_name: "Warehouse B", bin_id: 4, bin_location: "R-B2/B-202", quantity_received: 200, quantity_available: 0, quantity_consumed: 200, best_before_date: isoDate(getDate(-30)), manufacture_date: "2025-06-01", supplier_id: 2, supplier_name: "Krishna Spices & Co", status: "depleted", created_at: "2025-06-05", notes: "Fully consumed" },
+    { id: 10, product_id: 3101, product_name: "Corrugated Boxes", batch_number: "BATCH-2026-010", lot_number: "LOT-PK-CB1", warehouse_id: 2, warehouse_name: "Warehouse B", bin_id: 3, bin_location: "R-B1/B-201", quantity_received: 1000, quantity_available: 140, quantity_consumed: 860, best_before_date: null, manufacture_date: "2026-02-15", supplier_id: 3, supplier_name: "National Packaging Solutions", status: "active", created_at: "2026-02-20", notes: "" },
+  ];
+
+  const advCycleCounts = [
+    { id: 1, cycle_code: "CC-2026-001", warehouse_id: 1, warehouse_name: "Warehouse A", cycle_type: "full", zone_name: "", planned_date: isoDate(getDate(2)), started_at: isoDate(getDate(2)), completed_at: isoDate(getDate(1)), status: "completed", items_counted: 5, items_total: 5, variance_count: 1, notes: "Annual full count" },
+    { id: 2, cycle_code: "CC-2026-002", warehouse_id: 2, warehouse_name: "Warehouse B", cycle_type: "zone", zone_name: "Zone B1 - Spices", planned_date: isoDate(getDate(0)), started_at: isoDate(getDate(0)), completed_at: null, status: "in_progress", items_counted: 2, items_total: 4, variance_count: 0, notes: "Zone B1 spot check" },
+    { id: 3, cycle_code: "CC-2026-003", warehouse_id: 1, warehouse_name: "Warehouse A", cycle_type: "partial", zone_name: "", planned_date: isoDate(getDate(-3)), started_at: null, completed_at: null, status: "planned", items_counted: 0, items_total: 3, variance_count: 0, notes: "Quarterly partial count - oils" },
+    { id: 4, cycle_code: "CC-2026-004", warehouse_id: 2, warehouse_name: "Warehouse B", cycle_type: "full", zone_name: "", planned_date: isoDate(getDate(-7)), started_at: null, completed_at: null, status: "planned", items_counted: 0, items_total: 6, variance_count: 0, notes: "Scheduled full count WH-B" },
+    { id: 5, cycle_code: "CC-2026-005", warehouse_id: 1, warehouse_name: "Warehouse A", cycle_type: "zone", zone_name: "Zone A1 - Grains", planned_date: isoDate(getDate(10)), started_at: isoDate(getDate(10)), completed_at: isoDate(getDate(9)), status: "completed", items_counted: 3, items_total: 3, variance_count: 2, notes: "Grains zone recount due to variance" },
+  ];
+
+  const advScanHistory = [
+    { id: 1, barcode: "SKU-WHEAT-ATTA", product_name: "Wheat Flour (Atta)", scan_type: "inbound", warehouse_name: "Warehouse A", bin_location: "R-A1/B-101", quantity_scanned: 500, timestamp: getDate(1).toISOString(), valid: true, error_message: null, session_id: "SESS-001" },
+    { id: 2, barcode: "SKU-RICE-BASM", product_name: "Rice (Basmati)", scan_type: "outbound", warehouse_name: "Warehouse A", bin_location: "R-A1/B-102", quantity_scanned: 50, timestamp: getDate(1).toISOString(), valid: true, error_message: null, session_id: "SESS-001" },
+    { id: 3, barcode: "BIN-A1-101", product_name: null, scan_type: "cycle_count", warehouse_name: "Warehouse A", bin_location: "R-A1/B-101", quantity_scanned: 1, timestamp: getDate(2).toISOString(), valid: true, error_message: null, session_id: "SESS-002" },
+    { id: 4, barcode: "INVALID-CODE", product_name: null, scan_type: "inbound", warehouse_name: "Warehouse B", bin_location: null, quantity_scanned: 0, timestamp: getDate(2).toISOString(), valid: false, error_message: "Barcode not found in system", session_id: "SESS-002" },
+    { id: 5, barcode: "SKU-CHILLI-RED", product_name: "Red Chilli Powder", scan_type: "transfer", warehouse_name: "Warehouse B", bin_location: "R-B1/B-201", quantity_scanned: 100, timestamp: getDate(3).toISOString(), valid: true, error_message: null, session_id: "SESS-003" },
+    { id: 6, barcode: "SKU-SOY-OIL", product_name: "Soybean Oil", scan_type: "adjustment", warehouse_name: "Warehouse A", bin_location: "R-A1/B-101", quantity_scanned: 5, timestamp: getDate(4).toISOString(), valid: true, error_message: null, session_id: "SESS-003" },
+    { id: 7, barcode: "SKU-BOPP-25KG", product_name: "BOPP Bags (25kg)", scan_type: "outbound", warehouse_name: "Warehouse A", bin_location: "R-A1/B-101", quantity_scanned: 200, timestamp: getDate(5).toISOString(), valid: true, error_message: null, session_id: "SESS-004" },
+    { id: 8, barcode: "SKU-TURMERIC", product_name: "Turmeric Powder", scan_type: "inbound", warehouse_name: "Warehouse A", bin_location: "R-A1/B-102", quantity_scanned: 150, timestamp: getDate(6).toISOString(), valid: true, error_message: null, session_id: "SESS-004" },
+  ];
+
+  const computeExpiryAlerts = () => {
+    const alerts = [];
+    let alertId = 1;
+    for (const b of advBatches) {
+      if (!b.best_before_date || b.status === "depleted") continue;
+      const bbDate = new Date(b.best_before_date);
+      const daysRemaining = Math.ceil((bbDate - today) / (1000 * 60 * 60 * 24));
+      let alert_type = null;
+      if (daysRemaining <= 0) alert_type = "expired";
+      else if (daysRemaining <= 7) alert_type = "critical";
+      else if (daysRemaining <= 30) alert_type = "warning";
+      if (alert_type) {
+        alerts.push({
+          id: alertId++,
+          batch_id: b.id,
+          batch_number: b.batch_number,
+          product_id: b.product_id,
+          product_name: b.product_name,
+          warehouse_name: b.warehouse_name,
+          best_before_date: b.best_before_date,
+          days_remaining: daysRemaining,
+          alert_type,
+          quantity_at_risk: b.quantity_available,
+          acknowledged: false,
+          acknowledged_at: null,
+          action_taken: null,
+        });
+      }
+    }
+    return alerts;
+  };
+
+  const advExpiryAlerts = computeExpiryAlerts();
+
   return {
     meta: { seededAt: Date.now(), version: 1 },
     auth: {
@@ -321,6 +388,57 @@ const seedState = () => {
     inventory: { products: inventory },
     buyer: { quotations: buyerQuotations, purchaseOrders, reorderHistory },
     finance: { purchaseOrders, salesOrders, ledgerEntries },
+    advancedInventory: {
+      batches: advBatches,
+      cycleCounts: advCycleCounts,
+      scanHistory: advScanHistory,
+      expiryAlerts: advExpiryAlerts,
+    },
+    driver: {
+      assignments: [
+        {
+          id: 1, shipment_id: "SHP-2026-001", driver_id: 10, driver_name: "Rajesh Kumar", vehicle_number: "MH-12-AB-1234",
+          status: "assigned", assigned_at: isoDate(getDate(0)),
+          warehouse_id: 1, warehouse_name: "Warehouse A", warehouse_lat: 18.5089, warehouse_lng: 73.9259,
+          delivery_address: "Metro Retail Store, MG Road, Pune", delivery_lat: 18.5204, delivery_lng: 73.8567,
+          route_details: "Warehouse A → Metro Retail Store", total_distance_km: 12.4,
+          items: [
+            { product_id: 1001, product_name: "Wheat Flour (Atta)", quantity: 200, unit: "kg", bin_id: 1, rack_code: "R-A1", bin_code: "B-101", bin_location: "R-A1/B-101", picked: false },
+            { product_id: 1201, product_name: "Soybean Oil", quantity: 20, unit: "ltr", bin_id: 1, rack_code: "R-A1", bin_code: "B-101", bin_location: "R-A1/B-101", picked: false },
+            { product_id: 1101, product_name: "Rice (Basmati)", quantity: 100, unit: "kg", bin_id: 2, rack_code: "R-A1", bin_code: "B-102", bin_location: "R-A1/B-102", picked: false },
+          ],
+        },
+        {
+          id: 2, shipment_id: "SHP-2026-002", driver_id: 10, driver_name: "Rajesh Kumar", vehicle_number: "MH-12-AB-1234",
+          status: "picking", assigned_at: isoDate(getDate(1)),
+          warehouse_id: 2, warehouse_name: "Warehouse B", warehouse_lat: 19.2295, warehouse_lng: 72.8532,
+          delivery_address: "City Supermarket, Andheri West, Mumbai", delivery_lat: 19.1365, delivery_lng: 72.8296,
+          route_details: "Warehouse B → City Supermarket", total_distance_km: 18.7,
+          items: [
+            { product_id: 2001, product_name: "Red Chilli Powder", quantity: 50, unit: "kg", bin_id: 3, rack_code: "R-B1", bin_code: "B-201", bin_location: "R-B1/B-201", picked: true },
+            { product_id: 3101, product_name: "Corrugated Boxes", quantity: 200, unit: "pcs", bin_id: 3, rack_code: "R-B1", bin_code: "B-201", bin_location: "R-B1/B-201", picked: false },
+            { product_id: 1102, product_name: "Rice (Basmati)", quantity: 60, unit: "kg", bin_id: 4, rack_code: "R-B2", bin_code: "B-202", bin_location: "R-B2/B-202", picked: false },
+          ],
+        },
+        {
+          id: 3, shipment_id: "SHP-2026-003", driver_id: 10, driver_name: "Rajesh Kumar", vehicle_number: "MH-12-AB-1234",
+          status: "delivered", assigned_at: isoDate(getDate(5)),
+          warehouse_id: 1, warehouse_name: "Warehouse A", warehouse_lat: 18.5089, warehouse_lng: 73.9259,
+          delivery_address: "FreshMart, Kothrud, Pune", delivery_lat: 18.5074, delivery_lng: 73.8077,
+          route_details: "Warehouse A → FreshMart", total_distance_km: 8.2,
+          items: [
+            { product_id: 1001, product_name: "Wheat Flour (Atta)", quantity: 300, unit: "kg", bin_id: 1, rack_code: "R-A1", bin_code: "B-101", bin_location: "R-A1/B-101", picked: true },
+            { product_id: 2101, product_name: "Turmeric Powder", quantity: 30, unit: "kg", bin_id: 2, rack_code: "R-A1", bin_code: "B-102", bin_location: "R-A1/B-102", picked: true },
+          ],
+        },
+      ],
+      notifications: [
+        { id: 1, driver_id: 10, title: "New Assignment", message: "You have been assigned Shipment SHP-2026-001 at Warehouse A. 3 items to pick.", type: "assignment", related_id: 1, is_read: false, created_at: getDate(0).toISOString() },
+        { id: 2, driver_id: 10, title: "Picking In Progress", message: "Shipment SHP-2026-002 at Warehouse B — 1 of 3 items picked.", type: "update", related_id: 2, is_read: false, created_at: getDate(1).toISOString() },
+        { id: 3, driver_id: 10, title: "Delivery Completed", message: "Shipment SHP-2026-003 delivered to FreshMart, Kothrud, Pune.", type: "update", related_id: 3, is_read: true, created_at: getDate(5).toISOString() },
+        { id: 4, driver_id: 10, title: "Reminder", message: "Delivery for SHP-2026-001 is due today. Please proceed to Warehouse A.", type: "reminder", related_id: 1, is_read: false, created_at: getDate(0).toISOString() },
+      ],
+    },
   };
 };
 
@@ -346,6 +464,12 @@ const loadFromStorage = () => {
     }
 
     if (!parsed?.buyer?.reorderHistory) parsed.buyer = { ...(parsed.buyer || {}), reorderHistory: seedState().buyer.reorderHistory };
+
+    // Migration: ensure advancedInventory exists
+    if (!parsed.advancedInventory) parsed.advancedInventory = seedState().advancedInventory;
+
+    // Migration: ensure driver data exists
+    if (!parsed.driver) parsed.driver = seedState().driver;
 
     return parsed;
   } catch {
@@ -715,6 +839,267 @@ export const actions = {
     return null;
   },
   getPurchasesSuppliers: () => state.suppliers,
+
+  // ── Advanced Inventory actions ───────────────────────────────────────────
+  getAdvBatches: () => state.advancedInventory?.batches || [],
+
+  createAdvBatch: (payload) => {
+    const batches = state.advancedInventory?.batches || [];
+    const nextId = Math.max(0, ...batches.map((b) => b.id)) + 1;
+    const warehouse = (state.warehouse.warehouses || []).find((w) => String(w.id) === String(payload.warehouse_id));
+    const bin = (state.warehouse.bins || []).find((b) => String(b.id) === String(payload.bin_id));
+    const supplier = (state.suppliers || []).find((s) => String(s.id) === String(payload.supplier_id));
+    const product = (state.inventory.products || []).find((p) => String(p.id) === String(payload.product_id));
+    const qty = Number(payload.quantity_received || 0);
+
+    const newBatch = {
+      id: nextId,
+      product_id: Number(payload.product_id),
+      product_name: product?.name || payload.product_name || "",
+      batch_number: payload.batch_number || `BATCH-${Date.now()}`,
+      lot_number: payload.lot_number || "",
+      warehouse_id: Number(payload.warehouse_id),
+      warehouse_name: warehouse?.name || "",
+      bin_id: Number(payload.bin_id),
+      bin_location: bin ? `${bin.rack_code}/${bin.bin_code}` : "",
+      quantity_received: qty,
+      quantity_available: qty,
+      quantity_consumed: 0,
+      best_before_date: payload.best_before_date || null,
+      manufacture_date: payload.manufacture_date || "",
+      supplier_id: Number(payload.supplier_id),
+      supplier_name: supplier?.name || "",
+      status: "active",
+      created_at: new Date().toISOString().split("T")[0],
+      notes: payload.notes || "",
+    };
+
+    if (!state.advancedInventory) state.advancedInventory = { batches: [], cycleCounts: [], scanHistory: [], expiryAlerts: [] };
+    state.advancedInventory.batches = [newBatch, ...batches];
+    persist();
+    listeners.forEach((l) => l());
+    return newBatch;
+  },
+
+  updateAdvBatchStatus: (id, status) => {
+    if (!state.advancedInventory?.batches) return null;
+    state.advancedInventory.batches = state.advancedInventory.batches.map((b) =>
+      b.id === Number(id) ? { ...b, status } : b
+    );
+    persist();
+    listeners.forEach((l) => l());
+    return state.advancedInventory.batches.find((b) => b.id === Number(id));
+  },
+
+  getAdvCycleCounts: () => state.advancedInventory?.cycleCounts || [],
+
+  createAdvCycleCount: (payload) => {
+    const counts = state.advancedInventory?.cycleCounts || [];
+    const nextId = Math.max(0, ...counts.map((c) => c.id)) + 1;
+    const warehouse = (state.warehouse.warehouses || []).find((w) => String(w.id) === String(payload.warehouse_id));
+
+    const newCC = {
+      id: nextId,
+      cycle_code: `CC-2026-${String(nextId).padStart(3, "0")}`,
+      warehouse_id: Number(payload.warehouse_id),
+      warehouse_name: warehouse?.name || "",
+      cycle_type: payload.cycle_type || "partial",
+      zone_name: payload.zone_name || "",
+      planned_date: payload.planned_date || new Date().toISOString().split("T")[0],
+      started_at: null,
+      completed_at: null,
+      status: "planned",
+      items_counted: 0,
+      items_total: Number(payload.items_total || 5),
+      variance_count: 0,
+      notes: payload.notes || "",
+    };
+
+    if (!state.advancedInventory) state.advancedInventory = { batches: [], cycleCounts: [], scanHistory: [], expiryAlerts: [] };
+    state.advancedInventory.cycleCounts = [newCC, ...counts];
+    persist();
+    listeners.forEach((l) => l());
+    return newCC;
+  },
+
+  startAdvCycleCount: (id) => {
+    if (!state.advancedInventory?.cycleCounts) return null;
+    state.advancedInventory.cycleCounts = state.advancedInventory.cycleCounts.map((c) =>
+      c.id === Number(id) ? { ...c, status: "in_progress", started_at: new Date().toISOString().split("T")[0] } : c
+    );
+    persist();
+    listeners.forEach((l) => l());
+    return state.advancedInventory.cycleCounts.find((c) => c.id === Number(id));
+  },
+
+  completeAdvCycleCount: (id) => {
+    if (!state.advancedInventory?.cycleCounts) return null;
+    state.advancedInventory.cycleCounts = state.advancedInventory.cycleCounts.map((c) => {
+      if (c.id !== Number(id)) return c;
+      // Simulate variance on completion
+      const variance = Math.floor(Math.random() * 3);
+      return { ...c, status: "completed", completed_at: new Date().toISOString().split("T")[0], items_counted: c.items_total, variance_count: variance };
+    });
+    persist();
+    listeners.forEach((l) => l());
+    return state.advancedInventory.cycleCounts.find((c) => c.id === Number(id));
+  },
+
+  getAdvScanHistory: () => state.advancedInventory?.scanHistory || [],
+
+  processAdvScan: (payload) => {
+    const scans = state.advancedInventory?.scanHistory || [];
+    const nextId = Math.max(0, ...scans.map((s) => s.id)) + 1;
+    const lookup = actions.lookupByBarcode(payload.barcode);
+    const warehouse = (state.warehouse.warehouses || []).find((w) => String(w.id) === String(payload.warehouse_id));
+
+    const newScan = {
+      id: nextId,
+      barcode: payload.barcode || "",
+      product_name: lookup?.name || lookup?.product?.name || null,
+      scan_type: payload.scan_type || "inbound",
+      warehouse_name: warehouse?.name || payload.warehouse_name || "",
+      bin_location: lookup?.location || (lookup?.rack_code ? `${lookup.rack_code}/${lookup.bin_code}` : null),
+      quantity_scanned: Number(payload.quantity_scanned || 1),
+      timestamp: new Date().toISOString(),
+      valid: !!lookup,
+      error_message: lookup ? null : "Barcode not found in system",
+      session_id: payload.session_id || `SESS-${Date.now()}`,
+    };
+
+    if (!state.advancedInventory) state.advancedInventory = { batches: [], cycleCounts: [], scanHistory: [], expiryAlerts: [] };
+    state.advancedInventory.scanHistory = [newScan, ...scans];
+    persist();
+    listeners.forEach((l) => l());
+    return newScan;
+  },
+
+  getAdvExpiryAlerts: () => state.advancedInventory?.expiryAlerts || [],
+
+  acknowledgeAdvExpiryAlert: (id, actionTaken) => {
+    if (!state.advancedInventory?.expiryAlerts) return null;
+    state.advancedInventory.expiryAlerts = state.advancedInventory.expiryAlerts.map((a) =>
+      a.id === Number(id)
+        ? { ...a, acknowledged: true, acknowledged_at: new Date().toISOString(), action_taken: actionTaken || "reviewed" }
+        : a
+    );
+    persist();
+    listeners.forEach((l) => l());
+    return state.advancedInventory.expiryAlerts.find((a) => a.id === Number(id));
+  },
+
+  // ── Driver actions ────────────────────────────────────────────────────────
+  getDriverAssignments: () => state.driver?.assignments || [],
+
+  getDriverNotifications: () => state.driver?.notifications || [],
+
+  markDriverNotificationRead: (id) => {
+    if (!state.driver?.notifications) return;
+    state.driver.notifications = state.driver.notifications.map((n) =>
+      n.id === Number(id) ? { ...n, is_read: true } : n
+    );
+    persist();
+    listeners.forEach((l) => l());
+  },
+
+  markAllDriverNotificationsRead: () => {
+    if (!state.driver?.notifications) return;
+    state.driver.notifications = state.driver.notifications.map((n) => ({ ...n, is_read: true }));
+    persist();
+    listeners.forEach((l) => l());
+  },
+
+  updateDriverAssignmentStatus: (id, status) => {
+    if (!state.driver?.assignments) return null;
+    state.driver.assignments = state.driver.assignments.map((a) =>
+      a.id === Number(id) ? { ...a, status } : a
+    );
+    persist();
+    listeners.forEach((l) => l());
+    return state.driver.assignments.find((a) => a.id === Number(id));
+  },
+
+  markDriverItemPicked: (assignmentId, productId) => {
+    if (!state.driver?.assignments) return null;
+    let pickedItem = null;
+    state.driver.assignments = state.driver.assignments.map((a) => {
+      if (a.id !== Number(assignmentId)) return a;
+      const items = a.items.map((it) => {
+        if (it.product_id === Number(productId)) {
+          pickedItem = it;
+          return { ...it, picked: true };
+        }
+        return it;
+      });
+      const allPicked = items.every((it) => it.picked);
+      return { ...a, items, status: allPicked ? "in_transit" : "picking" };
+    });
+
+    // Create a notification for the picking update
+    if (pickedItem) {
+      const assignment = state.driver.assignments.find(a => a.id === Number(assignmentId));
+      const pickedCount = assignment.items.filter(it => it.picked).length;
+      const totalCount = assignment.items.length;
+      
+      const newNotif = {
+        id: Math.max(0, ...(state.driver.notifications || []).map(n => n.id)) + 1,
+        driver_id: 10, // Assuming fixed driver for prototype
+        title: "Item Picked",
+        message: `Picked ${pickedItem.product_name} for Shipment ${assignment.shipment_id}. (${pickedCount}/${totalCount})`,
+        type: "update",
+        related_id: assignment.id,
+        is_read: false,
+        created_at: new Date().toISOString()
+      };
+      state.driver.notifications = [newNotif, ...(state.driver.notifications || [])];
+    }
+
+    persist();
+    listeners.forEach((l) => l());
+    return state.driver.assignments.find((a) => a.id === Number(assignmentId));
+  },
+
+  assignOrderToDriver: (payload) => {
+    const nextId = Math.max(0, ...(state.driver.assignments || []).map(a => a.id)) + 1;
+    const newAssignment = {
+      id: nextId,
+      shipment_id: `SHP-2026-${String(nextId).padStart(3, "0")}`,
+      driver_id: payload.driver_id || 10,
+      driver_name: payload.driver_name || "Rajesh Kumar",
+      vehicle_number: payload.vehicle_number || "MH-12-AB-1234",
+      status: "assigned",
+      assigned_at: new Date().toISOString(),
+      warehouse_id: payload.warehouse_id,
+      warehouse_name: payload.warehouse_name,
+      warehouse_lat: payload.warehouse_lat,
+      warehouse_lng: payload.warehouse_lng,
+      delivery_address: payload.delivery_address,
+      delivery_lat: payload.delivery_lat,
+      delivery_lng: payload.delivery_lng,
+      route_details: `${payload.warehouse_name} → ${payload.delivery_address}`,
+      total_distance_km: payload.total_distance_km || 10,
+      items: payload.items.map(it => ({ ...it, picked: false }))
+    };
+
+    state.driver.assignments = [newAssignment, ...(state.driver.assignments || [])];
+    
+    // Create notification
+    const newNotif = {
+      id: Math.max(0, ...(state.driver.notifications || []).map(n => n.id)) + 1,
+      driver_id: newAssignment.driver_id,
+      title: "New Order Assigned",
+      message: `Shipment ${newAssignment.shipment_id} at ${newAssignment.warehouse_name} is ready for picking.`,
+      type: "assignment",
+      related_id: newAssignment.id,
+      is_read: false,
+      created_at: new Date().toISOString()
+    };
+    state.driver.notifications = [newNotif, ...(state.driver.notifications || [])];
+
+    persist();
+    listeners.forEach((l) => l());
+    return newAssignment;
+  },
 
   // tokens passthrough
   setTokensFromLocalStorage: () => {

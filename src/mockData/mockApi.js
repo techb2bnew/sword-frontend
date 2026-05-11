@@ -44,17 +44,42 @@ export async function mockRequest(method, url, bodyOrConfig, maybeConfig) {
     const token = "mock-jwt-token";
     let role = "buyer"; // default
     let username = "Demo User";
+    let userId = 1;
 
-    if (body?.email === "manager@sword.com") {
+    // Map email addresses to roles for testing
+    const email = body?.email || "demo@example.com";
+    
+    if (email === "supplier@sword.com") {
+      role = "supplier";
+      username = "Supplier Admin";
+      userId = 2;
+    } else if (email === "accountant@sword.com") {
+      role = "accountant";
+      username = "Chief Accountant";
+      userId = 3;
+    } else if (email === "admin@sword.com") {
+      role = "admin";
+      username = "System Administrator";
+      userId = 4;
+    } else if (email === "manager@sword.com") {
       role = "warehouse_manager";
       username = "Chief Warehouse Manager";
+      userId = 99;
+    } else if (email === "buyer@sword.com") {
+      role = "buyer";
+      username = "Buyer Manager";
+      userId = 5;
+    } else if (email === "driver@sword.com") {
+      role = "driver";
+      username = "Rajesh Kumar";
+      userId = 10;
     }
 
     const user = {
-      id: body?.email === "manager@sword.com" ? 99 : 1,
+      id: userId,
       username: username,
       role: role,
-      email: body?.email || "demo@example.com",
+      email: email,
     };
     localStorage.setItem("erp_token", token);
     localStorage.setItem("erp_user", JSON.stringify(user));
@@ -147,6 +172,73 @@ export async function mockRequest(method, url, bodyOrConfig, maybeConfig) {
   // Purchases suppliers (Inventory module needs this)
   if (path === "/purchases/suppliers" && method.toLowerCase() === "get") {
     return ok(actions.getPurchasesSuppliers());
+  }
+
+  // ── Advanced Inventory routes ────────────────────────────────────────────
+  if (path === "/inventory/batches" && method.toLowerCase() === "get") {
+    return ok(actions.getAdvBatches());
+  }
+  if (path === "/inventory/batches" && method.toLowerCase() === "post") {
+    return ok(actions.createAdvBatch(body));
+  }
+
+  if (path === "/inventory/cycle-counts" && method.toLowerCase() === "get") {
+    return ok(actions.getAdvCycleCounts());
+  }
+  if (path === "/inventory/cycle-counts" && method.toLowerCase() === "post") {
+    return ok(actions.createAdvCycleCount(body));
+  }
+
+  const ccStart = matchJson(path, /^\/inventory\/cycle-counts\/(\d+)\/start$/);
+  if (ccStart && method.toLowerCase() === "post") {
+    return ok(actions.startAdvCycleCount(Number(ccStart[1])));
+  }
+
+  const ccComplete = matchJson(path, /^\/inventory\/cycle-counts\/(\d+)\/complete$/);
+  if (ccComplete && method.toLowerCase() === "post") {
+    return ok(actions.completeAdvCycleCount(Number(ccComplete[1])));
+  }
+
+  if (path === "/inventory/scans/process" && method.toLowerCase() === "post") {
+    return ok(actions.processAdvScan(body));
+  }
+
+  if (path === "/inventory/alerts/expiry" && method.toLowerCase() === "get") {
+    return ok(actions.getAdvExpiryAlerts());
+  }
+
+  const ackAlert = matchJson(path, /^\/inventory\/alerts\/expiry\/(\d+)\/acknowledge$/);
+  if (ackAlert && method.toLowerCase() === "post") {
+    return ok(actions.acknowledgeAdvExpiryAlert(Number(ackAlert[1]), body?.action_taken));
+  }
+
+  // ── Driver routes ─────────────────────────────────────────────────────────
+  if (path === "/driver/assignments" && method.toLowerCase() === "get") {
+    return ok(actions.getDriverAssignments());
+  }
+  if (path === "/driver/notifications" && method.toLowerCase() === "get") {
+    return ok(actions.getDriverNotifications());
+  }
+
+  const notiRead = matchJson(path, /^\/driver\/notifications\/(\d+)\/read$/);
+  if (notiRead && method.toLowerCase() === "put") {
+    actions.markDriverNotificationRead(Number(notiRead[1]));
+    return ok({ success: true });
+  }
+
+  if (path === "/driver/notifications/read-all" && method.toLowerCase() === "put") {
+    actions.markAllDriverNotificationsRead();
+    return ok({ success: true });
+  }
+
+  const assignStatus = matchJson(path, /^\/driver\/assignments\/(\d+)\/status$/);
+  if (assignStatus && method.toLowerCase() === "put") {
+    return ok(actions.updateDriverAssignmentStatus(Number(assignStatus[1]), body?.status));
+  }
+
+  const pickItem = matchJson(path, /^\/driver\/assignments\/(\d+)\/pick\/(\d+)$/);
+  if (pickItem && method.toLowerCase() === "put") {
+    return ok(actions.markDriverItemPicked(Number(pickItem[1]), Number(pickItem[2])));
   }
 
   // Fallback: return empty arrays to keep frontend alive

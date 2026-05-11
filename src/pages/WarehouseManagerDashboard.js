@@ -3,8 +3,49 @@ import axios from "axios";
 import * as THREE from "three";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, Html, Grid, PerspectiveCamera, PivotControls } from "@react-three/drei";
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+import "leaflet-defaulticon-compatibility";
+import "leaflet-defaulticon-compatibility/dist/leaflet-defaulticon-compatibility.css";
 import { API } from "../config";
 import Modal from "../components/Modal";
+
+/* ---------------------- Map helpers ---------------------- */
+
+function warehouseIcon(color) {
+  return L.divIcon({
+    className: "",
+    html: `<div style="width:32px;height:32px;border-radius:50%;background:${color};border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;font-size:16px;">🏢</div>`,
+    iconSize: [32, 32],
+    iconAnchor: [16, 16],
+    popupAnchor: [0, -18],
+  });
+}
+
+function vehicleIcon() {
+  return L.divIcon({
+    className: "",
+    html: `<div style="width:28px;height:28px;border-radius:50%;background:#3b82f6;border:2px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;font-size:14px;">🚛</div>`,
+    iconSize: [28, 28],
+    iconAnchor: [14, 14],
+    popupAnchor: [0, -16],
+  });
+}
+
+function FitBounds({ positions }) {
+  const map = useMap();
+  useEffect(() => {
+    // Filter out any positions with invalid coordinates
+    const valid = positions.filter(p => p && p.length === 2 && isFinite(p[0]) && isFinite(p[1]));
+    if (valid.length >= 2) {
+      map.fitBounds(valid, { padding: [50, 50], maxZoom: 12 });
+    } else if (valid.length === 1) {
+      map.setView(valid[0], 11);
+    }
+  }, [map, positions]);
+  return null;
+}
 
 /* ---------------------- Helpers ---------------------- */
 
@@ -302,78 +343,194 @@ export default function WarehouseManagerDashboard({ products: allProducts, push,
           </div>
         )}
 
-        {activeTab === "geo-sync" && (
-          <div className="card fade-up" style={{ height: "100%", display: "flex", flexDirection: "column", padding: 20 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-               <div><div style={{ fontWeight: 700, fontSize: 16 }}>Live Global Sync Tracking</div><div style={{ fontSize: 13, opacity: 0.6 }}>Real-time GPS broadcast of warehouse assets and active fleet</div></div>
-               <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#f0fdf4", padding: "6px 12px", borderRadius: 20, border: "1px solid #dcfce7" }}>
-                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#22c55e", boxShadow: "0 0 10px #22c55e" }} />
-                  <span style={{ fontSize: 11, fontWeight: 700, color: "#166534" }}>LIVE BROADCASTING</span>
+        {activeTab === "geo-sync" && (() => {
+          // Only work with warehouses that have valid GPS coordinates
+          const validWarehouses = warehouses.filter(w => w && isFinite(Number(w.lat)) && isFinite(Number(w.lng)));
+
+          // Compute warehouse stats for map popups
+          const whStats = validWarehouses.map(wh => {
+            const whBins = bins.filter(b => String(b.warehouse_id) === String(wh.id));
+            const whProducts = (allProducts || []).filter(p => String(p.warehouse_id) === String(wh.id));
+            const totalStock = whProducts.reduce((s, p) => s + (p.stock || 0), 0);
+            const totalCapacity = whBins.reduce((s, b) => s + (b.capacity || 5000), 0);
+            const fillPct = totalCapacity > 0 ? Math.round((totalStock / totalCapacity) * 100) : 0;
+            const productCount = whProducts.length;
+            const rackCount = [...new Set(whBins.map(b => b.rack_code))].length;
+            const lowStockItems = whProducts.filter(p => { const bin = whBins.find(b => b.id === p.bin_id); return bin && p.stock / (bin.capacity || 5000) <= 0.25; }).length;
+            return { ...wh, lat: Number(wh.lat), lng: Number(wh.lng), totalStock, totalCapacity, fillPct, productCount, rackCount, binCount: whBins.length, lowStockItems };
+          });
+
+          // Simulate fleet vehicle positions (midpoint between warehouses)
+          const activeVehicles = fleet.filter(v => v.status === "On Trip");
+          const vehiclePositions = activeVehicles.map((v, i) => {
+            if (validWarehouses.length >= 2) {
+              const from = validWarehouses[i % validWarehouses.length];
+              const to = validWarehouses[(i + 1) % validWarehouses.length];
+              const progress = 0.3 + Math.random() * 0.4;
+              return { ...v, lat: Number(from.lat) + (Number(to.lat) - Number(from.lat)) * progress, lng: Number(from.lng) + (Number(to.lng) - Number(from.lng)) * progress, from: from.name, to: to.name };
+            }
+            const wh = validWarehouses[0];
+            return { ...v, lat: (Number(wh?.lat) || 18.52) + 0.02, lng: (Number(wh?.lng) || 73.86) + 0.02, from: wh?.name || "—", to: wh?.name || "—" };
+          });
+
+          // Route lines between all warehouse pairs
+          const routeLines = [];
+          for (let i = 0; i < validWarehouses.length; i++) {
+            for (let j = i + 1; j < validWarehouses.length; j++) {
+              routeLines.push({ from: validWarehouses[i], to: validWarehouses[j], key: `${validWarehouses[i].id}-${validWarehouses[j].id}` });
+            }
+          }
+
+          const mapPositions = whStats.map(w => [w.lat, w.lng]);
+
+          return (
+          <div className="card fade-up" style={{ height: "100%", display: "flex", flexDirection: "column", padding: 0, overflow: "hidden" }}>
+            {/* Header */}
+            <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+               <div>
+                 <div style={{ fontWeight: 700, fontSize: 16 }}>Live GPS Tracking</div>
+                 <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Real-time warehouse locations, fleet tracking & transfer routes</div>
+               </div>
+               <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
+                  <div style={{ display: "flex", gap: 12, fontSize: 11 }}>
+                    <span><span style={{ display: "inline-block", width: 10, height: 10, borderRadius: "50%", background: "#22c55e", marginRight: 4, verticalAlign: "middle" }} />Warehouse</span>
+                    <span><span style={{ display: "inline-block", width: 10, height: 10, borderRadius: "50%", background: "#3b82f6", marginRight: 4, verticalAlign: "middle" }} />Vehicle</span>
+                    <span><span style={{ display: "inline-block", width: 10, height: 10, borderRadius: 2, background: "#94a3b8", marginRight: 4, verticalAlign: "middle" }} />Route</span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, background: "#f0fdf4", padding: "4px 12px", borderRadius: 20, border: "1px solid #dcfce7" }}>
+                     <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#22c55e", boxShadow: "0 0 8px #22c55e", animation: "pulse 2s infinite" }} />
+                     <span style={{ fontSize: 10, fontWeight: 700, color: "#166534" }}>LIVE</span>
+                  </div>
                </div>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 3fr", gap: 20, flex: 1, minHeight: 0 }}>
-               <div style={{ display: "flex", flexDirection: "column", gap: 15 }}>
-                  <div className="stat-card" style={{ padding: 15, background: "var(--accent-4)", color: "white" }}><div style={{ fontSize: 10, fontWeight: 700 }}>ACTIVE SITES</div><div style={{ fontSize: 24, fontWeight: 800 }}>{warehouses.length}</div></div>
-                  <div className="stat-card" style={{ padding: 15, background: "#f8fafc", border: "1px solid var(--border)" }}><div style={{ fontSize: 10, fontWeight: 700, color: "#64748b" }}>EN-ROUTE VEHICLES</div><div style={{ fontSize: 24, fontWeight: 800 }}>{fleet.filter(v => v.status === "On Trip").length}</div></div>
-                  <div style={{ flex: 1, background: "#f8fafc", borderRadius: 16, border: "1px dashed #cbd5e1", padding: 15, display: "flex", flexDirection: "column", overflow: "auto" }}>
-                     <div style={{ fontSize: 11, fontWeight: 700, marginBottom: 10, color: "var(--accent)" }}>Fleet Live Feed</div>
-                     {fleet.filter(v => v.status === "On Trip").map(v => (
-                       <div key={v.id} style={{ padding: 8, borderBottom: "1px solid #e2e8f0", fontSize: 10 }}>
-                          <div style={{ fontWeight: 700 }}>🚛 {v.number}</div>
-                          <div style={{ opacity: 0.6 }}>Driver: {v.driver_name}</div>
-                          <div style={{ color: "#2563eb", marginTop: 4 }}>📍 Heading to: {warehouses[0]?.name}</div>
-                       </div>
-                     ))}
-                     {fleet.filter(v => v.status === "On Trip").length === 0 && <div style={{ fontSize: 10, opacity: 0.5, textAlign: "center", marginTop: 20 }}>No active routes found.</div>}
+            <div style={{ display: "grid", gridTemplateColumns: "300px 1fr", flex: 1, minHeight: 0 }}>
+              {/* Left panel */}
+              <div style={{ borderRight: "1px solid var(--border)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+                {/* Stats */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, padding: 12 }}>
+                  <div style={{ padding: 12, background: "#f0fdf4", borderRadius: 10, border: "1px solid #dcfce7" }}>
+                    <div style={{ fontSize: 9, fontWeight: 700, color: "#166534", textTransform: "uppercase" }}>Sites</div>
+                    <div style={{ fontSize: 22, fontWeight: 800 }}>{warehouses.length}</div>
                   </div>
-               </div>
+                  <div style={{ padding: 12, background: "#eff6ff", borderRadius: 10, border: "1px solid #dbeafe" }}>
+                    <div style={{ fontSize: 9, fontWeight: 700, color: "#1e40af", textTransform: "uppercase" }}>En-Route</div>
+                    <div style={{ fontSize: 22, fontWeight: 800 }}>{activeVehicles.length}</div>
+                  </div>
+                </div>
 
-               <div style={{ background: "white", borderRadius: 20, border: "1px solid var(--border)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
-                  <div style={{ padding: "12px 20px", borderBottom: "1px solid var(--border)", background: "#f8fafc", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                     <span style={{ fontSize: 12, fontWeight: 700 }}>Active Asset & Fleet GPS Log</span>
-                     <span style={{ fontSize: 10, opacity: 0.5 }}>Updated every 15s</span>
+                {/* Warehouse list */}
+                <div style={{ flex: 1, overflow: "auto", padding: "0 12px 12px" }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginBottom: 8, textTransform: "uppercase", letterSpacing: 0.4 }}>Warehouse Sites</div>
+                  {whStats.map(wh => (
+                    <div key={wh.id} style={{ padding: 12, marginBottom: 8, background: String(wh.id) === String(selectedWarehouseId) ? "rgba(37,99,235,0.06)" : "var(--bg-base)", border: `1px solid ${String(wh.id) === String(selectedWarehouseId) ? "var(--accent)" : "var(--border)"}`, borderRadius: 10, cursor: "pointer" }} onClick={() => setSelectedWarehouseId(wh.id)}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                        <span style={{ fontWeight: 700, fontSize: 13 }}>🏢 {wh.name}</span>
+                        <span style={{ fontSize: 10, fontWeight: 600, color: wh.fillPct > 60 ? "#22c55e" : wh.fillPct > 25 ? "#f59e0b" : "#ef4444" }}>{wh.fillPct}%</span>
+                      </div>
+                      <div style={{ width: "100%", height: 4, background: "#e2e8f0", borderRadius: 2, marginBottom: 6 }}>
+                        <div style={{ width: `${wh.fillPct}%`, height: "100%", background: wh.fillPct > 60 ? "#22c55e" : wh.fillPct > 25 ? "#f59e0b" : "#ef4444", borderRadius: 2 }} />
+                      </div>
+                      <div style={{ display: "flex", gap: 10, fontSize: 10, color: "var(--text-muted)" }}>
+                        <span>{wh.rackCount} racks</span>
+                        <span>{wh.binCount} bins</span>
+                        <span>{wh.productCount} items</span>
+                        {wh.lowStockItems > 0 && <span style={{ color: "#ef4444", fontWeight: 600 }}>{wh.lowStockItems} low</span>}
+                      </div>
+                      <div style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 4, fontFamily: "monospace" }}>
+                        {Number(wh.lat).toFixed(4)}, {Number(wh.lng).toFixed(4)}
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Fleet section */}
+                  {activeVehicles.length > 0 && (
+                    <>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginTop: 12, marginBottom: 8, textTransform: "uppercase", letterSpacing: 0.4 }}>Active Fleet</div>
+                      {vehiclePositions.map(v => (
+                        <div key={v.id} style={{ padding: 10, marginBottom: 6, background: "#eff6ff", border: "1px solid #dbeafe", borderRadius: 8, fontSize: 11 }}>
+                          <div style={{ fontWeight: 700 }}>🚛 {v.number}</div>
+                          <div style={{ color: "var(--text-muted)", fontSize: 10 }}>Driver: {v.driver_name}</div>
+                          <div style={{ color: "#2563eb", fontSize: 10, marginTop: 2 }}>{v.from} → {v.to}</div>
+                        </div>
+                      ))}
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Map */}
+              <div style={{ position: "relative" }}>
+                {whStats.length > 0 ? (
+                  <MapContainer center={[whStats[0].lat, whStats[0].lng]} zoom={10} style={{ height: "100%", width: "100%" }} scrollWheelZoom={true}>
+                    <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' />
+                    {mapPositions.length >= 1 && <FitBounds positions={mapPositions} />}
+
+                    {/* Route lines between warehouses */}
+                    {routeLines.map(r => (
+                      <Polyline key={r.key} positions={[[Number(r.from.lat), Number(r.from.lng)], [Number(r.to.lat), Number(r.to.lng)]]} pathOptions={{ color: "#94a3b8", weight: 2, dashArray: "8 6", opacity: 0.7 }} />
+                    ))}
+
+                    {/* Warehouse markers */}
+                    {whStats.map(wh => (
+                      <Marker key={wh.id} position={[wh.lat, wh.lng]} icon={warehouseIcon(wh.fillPct > 60 ? "#22c55e" : wh.fillPct > 25 ? "#f59e0b" : "#ef4444")}>
+                        <Popup maxWidth={280} minWidth={220}>
+                          <div style={{ fontFamily: "Inter, sans-serif" }}>
+                            <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 8 }}>🏢 {wh.name}</div>
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginBottom: 8 }}>
+                              <div style={{ background: "#f8fafc", padding: "6px 8px", borderRadius: 6 }}>
+                                <div style={{ fontSize: 9, color: "#64748b", fontWeight: 700 }}>STOCK</div>
+                                <div style={{ fontSize: 14, fontWeight: 800 }}>{wh.totalStock.toLocaleString()}</div>
+                              </div>
+                              <div style={{ background: "#f8fafc", padding: "6px 8px", borderRadius: 6 }}>
+                                <div style={{ fontSize: 9, color: "#64748b", fontWeight: 700 }}>FILL</div>
+                                <div style={{ fontSize: 14, fontWeight: 800, color: wh.fillPct > 60 ? "#22c55e" : wh.fillPct > 25 ? "#f59e0b" : "#ef4444" }}>{wh.fillPct}%</div>
+                              </div>
+                            </div>
+                            <div style={{ fontSize: 11, color: "#475569", lineHeight: 1.6 }}>
+                              <div>{wh.rackCount} racks &middot; {wh.binCount} bins &middot; {wh.productCount} products</div>
+                              {wh.lowStockItems > 0 && <div style={{ color: "#ef4444", fontWeight: 600 }}>⚠ {wh.lowStockItems} low-stock items</div>}
+                              <div style={{ fontFamily: "monospace", fontSize: 10, marginTop: 4 }}>GPS: {Number(wh.lat).toFixed(6)}, {Number(wh.lng).toFixed(6)}</div>
+                            </div>
+                          </div>
+                        </Popup>
+                      </Marker>
+                    ))}
+
+                    {/* Vehicle markers */}
+                    {vehiclePositions.map(v => (
+                      <Marker key={`v-${v.id}`} position={[v.lat, v.lng]} icon={vehicleIcon()}>
+                        <Popup>
+                          <div style={{ fontFamily: "Inter, sans-serif" }}>
+                            <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>🚛 {v.number}</div>
+                            <div style={{ fontSize: 11, color: "#475569" }}>Driver: {v.driver_name}</div>
+                            <div style={{ fontSize: 11, color: "#2563eb", marginTop: 4, fontWeight: 600 }}>{v.from} → {v.to}</div>
+                            <div style={{ fontFamily: "monospace", fontSize: 10, color: "#64748b", marginTop: 4 }}>GPS: {v.lat.toFixed(6)}, {v.lng.toFixed(6)}</div>
+                          </div>
+                        </Popup>
+                      </Marker>
+                    ))}
+
+                    {/* Vehicle route lines to destination */}
+                    {vehiclePositions.map(v => {
+                      const destWh = validWarehouses.find(w => w.name === v.to);
+                      if (!destWh || !isFinite(v.lat) || !isFinite(v.lng)) return null;
+                      return <Polyline key={`vr-${v.id}`} positions={[[v.lat, v.lng], [Number(destWh.lat), Number(destWh.lng)]]} pathOptions={{ color: "#3b82f6", weight: 3, opacity: 0.8 }} />;
+                    })}
+                  </MapContainer>
+                ) : (
+                  <div style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-muted)" }}>
+                    <div style={{ textAlign: "center" }}>
+                      <div style={{ fontSize: 40, marginBottom: 12 }}>🗺️</div>
+                      <div>No warehouses registered. Add a warehouse to see the map.</div>
+                    </div>
                   </div>
-                  <div className="table-wrap" style={{ flex: 1 }}>
-                     <table style={{ fontSize: 11 }}>
-                        <thead>
-                           <tr><th>Type</th><th>ID / Barcode</th><th>Current Location</th><th>Lat / Lng</th><th>Status</th></tr>
-                        </thead>
-                        <tbody>
-                           {/* Fleet rows */}
-                           {fleet.filter(v => v.status === "On Trip").map(v => (
-                             <tr key={`v-${v.id}`} style={{ background: "#eff6ff" }}>
-                                <td><span className="pill blue" style={{ fontSize: 9 }}>FLEET</span></td>
-                                <td style={{ fontWeight: 700 }}>{v.number}</td>
-                                <td>In Transit (Near {warehouses[0]?.name})</td>
-                                <td style={{ fontFamily: "monospace" }}>18.5204 / 73.8567</td>
-                                <td><span className="pill green" style={{ fontSize: 9 }}>EN-ROUTE</span></td>
-                             </tr>
-                           ))}
-                           {/* Asset rows */}
-                           {bins.map(bin => {
-                             const wh = warehouses.find(w => w.id === bin.warehouse_id);
-                             const product = allProducts.find(p => p.bin_id === bin.id);
-                             const ratio = product ? product.stock / bin.capacity : 0;
-                             const rackPos = rackPositions[bin.rack_code] || [0, 0, 0];
-                             const geo = wh ? calculateGeo(wh.lat, wh.lng, rackPos) : { lat: "-", lng: "-" };
-                             return (
-                               <tr key={bin.id}>
-                                  <td><span className="pill gray" style={{ fontSize: 9 }}>ASSET</span></td>
-                                  <td style={{ fontWeight: 700, color: "var(--accent)" }}>{bin.barcode}</td>
-                                  <td>{wh?.name}</td>
-                                  <td style={{ fontFamily: "monospace" }}>{geo.lat} / {geo.lng}</td>
-                                  <td><span className={`pill ${ratio <= 0.25 ? 'red' : 'green'}`} style={{ fontSize: 9 }}>{ratio <= 0.25 ? 'LOW STOCK' : 'STABLE'}</span></td>
-                               </tr>
-                             );
-                           })}
-                        </tbody>
-                     </table>
-                  </div>
-               </div>
+                )}
+              </div>
             </div>
           </div>
-        )}
+          );
+        })()}
 
         {activeTab === "inventory" && (
           <div className="card fade-up"><div className="table-wrap"><table><thead><tr><th>Product</th><th>Warehouse</th><th>Bin</th><th>Level</th><th>Status</th></tr></thead><tbody>{allProducts.filter(p => String(p.warehouse_id) === String(selectedWarehouseId)).map((p) => {

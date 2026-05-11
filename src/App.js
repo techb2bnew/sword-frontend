@@ -14,6 +14,7 @@ import Topbar from "./components/Topbar";
 import AuthPage from "./pages/AuthPage";
 import Dashboard from "./pages/Dashboard";
 import Inventory from "./pages/Inventory";
+import AdvancedInventory from "./pages/AdvancedInventory";
 import Purchases from "./pages/Purchases";
 import Sales from "./pages/Sales";
 import Transport from "./pages/Transport";
@@ -41,6 +42,7 @@ import BuyerInventory from "./pages/BuyerInventory";
 import BuyerOverview from "./pages/BuyerOverview";
 import BuyerPurchaseOrders from "./pages/BuyerPurchaseOrders";
 import WarehouseManagerDashboard from "./pages/WarehouseManagerDashboard";
+import DriverDashboard from "./pages/DriverDashboard";
 
 
 // ── Toast Hook ──────────────────────────────────────────────────────────────
@@ -92,6 +94,8 @@ function App() {
           setActiveModule('finance-dashboard');
         } else if (parsedUser.role === 'warehouse_manager' && activeModule === 'dashboard') {
           setActiveModule('warehouse-manager-dashboard');
+        } else if (parsedUser.role === 'driver' && activeModule === 'dashboard') {
+          setActiveModule('driver-dashboard');
         }
       } catch (e) {
         console.error("Corrupted user data", e);
@@ -129,6 +133,7 @@ function App() {
           {activeModule === "customers" && <Customers push={push} />}
           {activeModule === "warehouse" && <Warehouse products={products} push={push} />}
           {activeModule === "inventory" && <Inventory products={products} onRefresh={fetchProducts} push={push} user={user} />}
+          {activeModule === "advanced-inventory" && <AdvancedInventory push={push} user={user} />}
           {activeModule === "purchases" && <Purchases products={products} onRefreshProducts={fetchProducts} push={push} />}
           {activeModule === "customer-orders" && <CustomerOrders products={products} push={push} user={user} />}
           {activeModule === "transport" && <Transport push={push} />}
@@ -189,6 +194,10 @@ function App() {
 
           {activeModule === "warehouse-manager-dashboard" && (
             <WarehouseManagerDashboard products={products} push={push} user={user} />
+          )}
+
+          {activeModule === "driver-dashboard" && (
+            <DriverDashboard push={push} />
           )}
 
           
