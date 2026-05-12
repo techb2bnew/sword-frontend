@@ -73,6 +73,10 @@ export async function mockRequest(method, url, bodyOrConfig, maybeConfig) {
       role = "driver";
       username = "Rajesh Kumar";
       userId = 10;
+    } else if (email === "dispatcher@sword.com") {
+      role = "dispatcher";
+      username = "Dispatcher Admin";
+      userId = 11;
     }
 
     const user = {
@@ -212,33 +216,33 @@ export async function mockRequest(method, url, bodyOrConfig, maybeConfig) {
     return ok(actions.acknowledgeAdvExpiryAlert(Number(ackAlert[1]), body?.action_taken));
   }
 
-  // ── Driver routes ─────────────────────────────────────────────────────────
-  if (path === "/driver/assignments" && method.toLowerCase() === "get") {
-    return ok(actions.getDriverAssignments());
+  // ── Dispatcher routes ─────────────────────────────────────────────────────────
+  if (path === "/dispatcher/assignments" && method.toLowerCase() === "get") {
+    return ok(actions.getDispatcherAssignments());
   }
-  if (path === "/driver/notifications" && method.toLowerCase() === "get") {
-    return ok(actions.getDriverNotifications());
+  if (path === "/dispatcher/notifications" && method.toLowerCase() === "get") {
+    return ok(actions.getDispatcherNotifications());
   }
 
-  const notiRead = matchJson(path, /^\/driver\/notifications\/(\d+)\/read$/);
+  const notiRead = matchJson(path, /^\/dispatcher\/notifications\/(\d+)\/read$/);
   if (notiRead && method.toLowerCase() === "put") {
-    actions.markDriverNotificationRead(Number(notiRead[1]));
+    actions.markDispatcherNotificationRead(Number(notiRead[1]));
     return ok({ success: true });
   }
 
-  if (path === "/driver/notifications/read-all" && method.toLowerCase() === "put") {
-    actions.markAllDriverNotificationsRead();
+  if (path === "/dispatcher/notifications/read-all" && method.toLowerCase() === "put") {
+    actions.markAllDispatcherNotificationsRead();
     return ok({ success: true });
   }
 
-  const assignStatus = matchJson(path, /^\/driver\/assignments\/(\d+)\/status$/);
+  const assignStatus = matchJson(path, /^\/dispatcher\/assignments\/(\d+)\/status$/);
   if (assignStatus && method.toLowerCase() === "put") {
-    return ok(actions.updateDriverAssignmentStatus(Number(assignStatus[1]), body?.status));
+    return ok(actions.updateDispatcherAssignmentStatus(Number(assignStatus[1]), body?.status));
   }
 
-  const pickItem = matchJson(path, /^\/driver\/assignments\/(\d+)\/pick\/(\d+)$/);
+  const pickItem = matchJson(path, /^\/dispatcher\/assignments\/(\d+)\/pick\/(\d+)$/);
   if (pickItem && method.toLowerCase() === "put") {
-    return ok(actions.markDriverItemPicked(Number(pickItem[1]), Number(pickItem[2])));
+    return ok(actions.markDispatcherItemPicked(Number(pickItem[1]), Number(pickItem[2])));
   }
 
   // Fallback: return empty arrays to keep frontend alive

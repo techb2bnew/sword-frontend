@@ -10,7 +10,6 @@ export default function Sidebar({ activeModule, setActiveModule, user, onLogout 
     { id: "purchases", label: "Purchases", icon: "🤝" },
     { id: "customer-orders", label: "Customer Orders", icon: "🛒", badge: "New" },
     { id: "transport", label: "Transport", icon: "🚛" },
-    // { id: "manufacturing", label: "Manufacturing", icon: "🏭" },
     { id: "finance", label: "Finance & Accounts", icon: "💰" },
     { id: "reports", label: "Reports", icon: "📈" },
   ];
@@ -49,8 +48,12 @@ export default function Sidebar({ activeModule, setActiveModule, user, onLogout 
     { id: "finance-taxes", label: "Tax Compliance", icon: "🧾" },
   ];
 
+  const dispatcherMenu = [
+    { id: "dispatcher-dashboard", label: "My Dashboard", icon: "🚛" },
+  ];
+
   const driverMenu = [
-    { id: "driver-dashboard", label: "My Dashboard", icon: "🚛" },
+    { id: "driver-dashboard", label: "My Assignments", icon: "🚛" },
   ];
 
   const warehouseManagerMenu = [
@@ -61,23 +64,18 @@ export default function Sidebar({ activeModule, setActiveModule, user, onLogout 
     { id: "transport", label: "Fleet Sync", icon: "🚛" },
   ];
 
-
-
-
   const menu = user?.role === 'supplier' ? supplierMenu : 
                user?.role === 'customer' ? customerMenu : 
                user?.role === 'buyer' ? buyerMenu : 
                user?.role === 'accountant' ? accountantMenu : 
                user?.role === 'warehouse_manager' ? warehouseManagerMenu :
                user?.role === 'driver' ? driverMenu :
+               user?.role === 'dispatcher' ? dispatcherMenu :
                adminMenu;
-
 
   return (
     <aside className="sidebar">
       <div className="sidebar-logo">
-        {/* <div className="sidebar-logo-icon">G</div>
-        <div className="sidebar-logo-text">GYRO<span>FOODS</span></div> */}
         <div className="sidebar-logo-icon">S</div>
         <div className="sidebar-logo-text">SW<span>ORD</span></div>
       </div>

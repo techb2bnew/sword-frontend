@@ -394,7 +394,7 @@ const seedState = () => {
       scanHistory: advScanHistory,
       expiryAlerts: advExpiryAlerts,
     },
-    driver: {
+    dispatcher: {
       assignments: [
         {
           id: 1, shipment_id: "SHP-2026-001", driver_id: 10, driver_name: "Rajesh Kumar", vehicle_number: "MH-12-AB-1234",
@@ -402,6 +402,7 @@ const seedState = () => {
           warehouse_id: 1, warehouse_name: "Warehouse A", warehouse_lat: 18.5089, warehouse_lng: 73.9259,
           delivery_address: "Metro Retail Store, MG Road, Pune", delivery_lat: 18.5204, delivery_lng: 73.8567,
           route_details: "Warehouse A → Metro Retail Store", total_distance_km: 12.4,
+          delivery_date: isoDate(getDate(-1)), estimated_time: "14:30 PM", navigation_url: "https://maps.google.com/?q=18.5204,73.8567",
           items: [
             { product_id: 1001, product_name: "Wheat Flour (Atta)", quantity: 200, unit: "kg", bin_id: 1, rack_code: "R-A1", bin_code: "B-101", bin_location: "R-A1/B-101", picked: false },
             { product_id: 1201, product_name: "Soybean Oil", quantity: 20, unit: "ltr", bin_id: 1, rack_code: "R-A1", bin_code: "B-101", bin_location: "R-A1/B-101", picked: false },
@@ -414,6 +415,7 @@ const seedState = () => {
           warehouse_id: 2, warehouse_name: "Warehouse B", warehouse_lat: 19.2295, warehouse_lng: 72.8532,
           delivery_address: "City Supermarket, Andheri West, Mumbai", delivery_lat: 19.1365, delivery_lng: 72.8296,
           route_details: "Warehouse B → City Supermarket", total_distance_km: 18.7,
+          delivery_date: isoDate(getDate(-2)), estimated_time: "11:00 AM", navigation_url: "https://maps.google.com/?q=19.1365,72.8296",
           items: [
             { product_id: 2001, product_name: "Red Chilli Powder", quantity: 50, unit: "kg", bin_id: 3, rack_code: "R-B1", bin_code: "B-201", bin_location: "R-B1/B-201", picked: true },
             { product_id: 3101, product_name: "Corrugated Boxes", quantity: 200, unit: "pcs", bin_id: 3, rack_code: "R-B1", bin_code: "B-201", bin_location: "R-B1/B-201", picked: false },
@@ -426,6 +428,7 @@ const seedState = () => {
           warehouse_id: 1, warehouse_name: "Warehouse A", warehouse_lat: 18.5089, warehouse_lng: 73.9259,
           delivery_address: "FreshMart, Kothrud, Pune", delivery_lat: 18.5074, delivery_lng: 73.8077,
           route_details: "Warehouse A → FreshMart", total_distance_km: 8.2,
+          delivery_date: isoDate(getDate(5)), estimated_time: "10:15 AM", navigation_url: "https://maps.google.com/?q=18.5074,73.8077",
           items: [
             { product_id: 1001, product_name: "Wheat Flour (Atta)", quantity: 300, unit: "kg", bin_id: 1, rack_code: "R-A1", bin_code: "B-101", bin_location: "R-A1/B-101", picked: true },
             { product_id: 2101, product_name: "Turmeric Powder", quantity: 30, unit: "kg", bin_id: 2, rack_code: "R-A1", bin_code: "B-102", bin_location: "R-A1/B-102", picked: true },
@@ -468,8 +471,14 @@ const loadFromStorage = () => {
     // Migration: ensure advancedInventory exists
     if (!parsed.advancedInventory) parsed.advancedInventory = seedState().advancedInventory;
 
-    // Migration: ensure driver data exists
-    if (!parsed.driver) parsed.driver = seedState().driver;
+    // Migration: rename driver to dispatcher
+    if (parsed.driver && !parsed.dispatcher) {
+      parsed.dispatcher = parsed.driver;
+      delete parsed.driver;
+    }
+
+    // Migration: ensure dispatcher data exists
+    if (!parsed.dispatcher) parsed.dispatcher = seedState().dispatcher;
 
     return parsed;
   } catch {
@@ -988,41 +997,41 @@ export const actions = {
     return state.advancedInventory.expiryAlerts.find((a) => a.id === Number(id));
   },
 
-  // ── Driver actions ────────────────────────────────────────────────────────
-  getDriverAssignments: () => state.driver?.assignments || [],
+  // ── Dispatcher actions ────────────────────────────────────────────────────────
+  getDispatcherAssignments: () => state.dispatcher?.assignments || [],
 
-  getDriverNotifications: () => state.driver?.notifications || [],
+  getDispatcherNotifications: () => state.dispatcher?.notifications || [],
 
-  markDriverNotificationRead: (id) => {
-    if (!state.driver?.notifications) return;
-    state.driver.notifications = state.driver.notifications.map((n) =>
+  markDispatcherNotificationRead: (id) => {
+    if (!state.dispatcher?.notifications) return;
+    state.dispatcher.notifications = state.dispatcher.notifications.map((n) =>
       n.id === Number(id) ? { ...n, is_read: true } : n
     );
     persist();
     listeners.forEach((l) => l());
   },
 
-  markAllDriverNotificationsRead: () => {
-    if (!state.driver?.notifications) return;
-    state.driver.notifications = state.driver.notifications.map((n) => ({ ...n, is_read: true }));
+  markAllDispatcherNotificationsRead: () => {
+    if (!state.dispatcher?.notifications) return;
+    state.dispatcher.notifications = state.dispatcher.notifications.map((n) => ({ ...n, is_read: true }));
     persist();
     listeners.forEach((l) => l());
   },
 
-  updateDriverAssignmentStatus: (id, status) => {
-    if (!state.driver?.assignments) return null;
-    state.driver.assignments = state.driver.assignments.map((a) =>
+  updateDispatcherAssignmentStatus: (id, status) => {
+    if (!state.dispatcher?.assignments) return null;
+    state.dispatcher.assignments = state.dispatcher.assignments.map((a) =>
       a.id === Number(id) ? { ...a, status } : a
     );
     persist();
     listeners.forEach((l) => l());
-    return state.driver.assignments.find((a) => a.id === Number(id));
+    return state.dispatcher.assignments.find((a) => a.id === Number(id));
   },
 
-  markDriverItemPicked: (assignmentId, productId) => {
-    if (!state.driver?.assignments) return null;
+  markDispatcherItemPicked: (assignmentId, productId) => {
+    if (!state.dispatcher?.assignments) return null;
     let pickedItem = null;
-    state.driver.assignments = state.driver.assignments.map((a) => {
+    state.dispatcher.assignments = state.dispatcher.assignments.map((a) => {
       if (a.id !== Number(assignmentId)) return a;
       const items = a.items.map((it) => {
         if (it.product_id === Number(productId)) {
@@ -1037,12 +1046,12 @@ export const actions = {
 
     // Create a notification for the picking update
     if (pickedItem) {
-      const assignment = state.driver.assignments.find(a => a.id === Number(assignmentId));
+      const assignment = state.dispatcher.assignments.find(a => a.id === Number(assignmentId));
       const pickedCount = assignment.items.filter(it => it.picked).length;
       const totalCount = assignment.items.length;
       
       const newNotif = {
-        id: Math.max(0, ...(state.driver.notifications || []).map(n => n.id)) + 1,
+        id: Math.max(0, ...(state.dispatcher.notifications || []).map(n => n.id)) + 1,
         driver_id: 10, // Assuming fixed driver for prototype
         title: "Item Picked",
         message: `Picked ${pickedItem.product_name} for Shipment ${assignment.shipment_id}. (${pickedCount}/${totalCount})`,
@@ -1051,16 +1060,16 @@ export const actions = {
         is_read: false,
         created_at: new Date().toISOString()
       };
-      state.driver.notifications = [newNotif, ...(state.driver.notifications || [])];
+      state.dispatcher.notifications = [newNotif, ...(state.dispatcher.notifications || [])];
     }
 
     persist();
     listeners.forEach((l) => l());
-    return state.driver.assignments.find((a) => a.id === Number(assignmentId));
+    return state.dispatcher.assignments.find((a) => a.id === Number(assignmentId));
   },
 
-  assignOrderToDriver: (payload) => {
-    const nextId = Math.max(0, ...(state.driver.assignments || []).map(a => a.id)) + 1;
+  assignOrderToDispatcher: (payload) => {
+    const nextId = Math.max(0, ...(state.dispatcher.assignments || []).map(a => a.id)) + 1;
     const newAssignment = {
       id: nextId,
       shipment_id: `SHP-2026-${String(nextId).padStart(3, "0")}`,
@@ -1078,27 +1087,69 @@ export const actions = {
       delivery_lng: payload.delivery_lng,
       route_details: `${payload.warehouse_name} → ${payload.delivery_address}`,
       total_distance_km: payload.total_distance_km || 10,
+      delivery_date: payload.delivery_date || new Date().toISOString().split("T")[0],
+      estimated_time: payload.estimated_time || "12:00 PM",
+      navigation_url: `https://maps.google.com/?q=${payload.delivery_lat},${payload.delivery_lng}`,
       items: payload.items.map(it => ({ ...it, picked: false }))
     };
 
-    state.driver.assignments = [newAssignment, ...(state.driver.assignments || [])];
+    state.dispatcher.assignments = [newAssignment, ...(state.dispatcher.assignments || [])];
     
     // Create notification
     const newNotif = {
-      id: Math.max(0, ...(state.driver.notifications || []).map(n => n.id)) + 1,
+      id: Math.max(0, ...(state.dispatcher.notifications || []).map(n => n.id)) + 1,
       driver_id: newAssignment.driver_id,
       title: "New Order Assigned",
-      message: `Shipment ${newAssignment.shipment_id} at ${newAssignment.warehouse_name} is ready for picking.`,
+      message: `Shipment ${newAssignment.shipment_id} assigned. Delivery to ${newAssignment.delivery_address} on ${newAssignment.delivery_date} at ${newAssignment.estimated_time}.`,
       type: "assignment",
       related_id: newAssignment.id,
       is_read: false,
       created_at: new Date().toISOString()
     };
-    state.driver.notifications = [newNotif, ...(state.driver.notifications || [])];
+    state.dispatcher.notifications = [newNotif, ...(state.dispatcher.notifications || [])];
 
     persist();
     listeners.forEach((l) => l());
     return newAssignment;
+  },
+
+  assignDriverAfterScan: (shipmentId, driverDetails) => {
+    if (!state.dispatcher?.assignments) return null;
+    
+    let targetAssignment = state.dispatcher.assignments.find(a => a.shipment_id === shipmentId || String(a.id) === String(shipmentId));
+    
+    if (!targetAssignment) return null;
+
+    targetAssignment.driver_id = driverDetails.driver_id || 12;
+    targetAssignment.driver_name = driverDetails.driver_name || "Suresh Patil";
+    targetAssignment.vehicle_number = driverDetails.vehicle_number || "MH-14-XY-9876";
+    targetAssignment.delivery_date = driverDetails.delivery_date || new Date().toISOString().split("T")[0];
+    targetAssignment.estimated_time = driverDetails.estimated_time || "04:00 PM";
+    targetAssignment.status = "assigned"; // Reset or update status if needed
+
+    // Create notification for the driver
+    const newNotif = {
+      id: Math.max(0, ...(state.dispatcher.notifications || []).map(n => n.id)) + 1,
+      driver_id: targetAssignment.driver_id,
+      title: "🚛 New Route Assigned",
+      message: `New shipment ${targetAssignment.shipment_id} assigned. Route: ${targetAssignment.route_details}. Delivery Date: ${targetAssignment.delivery_date}. Est. Time: ${targetAssignment.estimated_time}.`,
+      type: "assignment",
+      related_id: targetAssignment.id,
+      is_read: false,
+      created_at: new Date().toISOString(),
+      details: {
+        route: targetAssignment.route_details,
+        navigation_url: targetAssignment.navigation_url,
+        delivery_date: targetAssignment.delivery_date,
+        estimated_time: targetAssignment.estimated_time
+      }
+    };
+
+    state.dispatcher.notifications = [newNotif, ...(state.dispatcher.notifications || [])];
+    
+    persist();
+    listeners.forEach((l) => l());
+    return targetAssignment;
   },
 
   // tokens passthrough

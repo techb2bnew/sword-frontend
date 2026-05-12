@@ -56,8 +56,10 @@ export default function AuthPage({ onLogin, push }) {
       
       <div className="login-card fade-up">
         <div className="login-logo">
-          <div className="login-logo-icon">G</div>
-          <div className="login-logo-text">GYRO<span>FOODS</span></div>
+          {/* <div className="login-logo-icon">G</div>
+          <div className="login-logo-text">GYRO<span>FOODS</span></div> */}
+          <div className="login-logo-icon">S</div>
+          <div className="login-logo-text">SW<span>ORD</span></div>
         </div>
 
         <div className="login-tab-row">
@@ -89,6 +91,7 @@ export default function AuthPage({ onLogin, push }) {
                 <option value="supplier">Supplier</option>
                 <option value="buyer">Buyer</option>
                 <option value="driver">Driver</option>
+                <option value="dispatcher">Dispatcher</option>
                 <option value="accountant">Accountant</option>
                 <option value="manager">Manager</option>
               </select>

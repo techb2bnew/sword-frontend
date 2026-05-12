@@ -42,7 +42,7 @@ import BuyerInventory from "./pages/BuyerInventory";
 import BuyerOverview from "./pages/BuyerOverview";
 import BuyerPurchaseOrders from "./pages/BuyerPurchaseOrders";
 import WarehouseManagerDashboard from "./pages/WarehouseManagerDashboard";
-import DriverDashboard from "./pages/DriverDashboard";
+import DriverDashboard from "./pages/DispatcherDashboard";
 
 
 // ── Toast Hook ──────────────────────────────────────────────────────────────
@@ -85,18 +85,6 @@ function App() {
       try {
         const parsedUser = JSON.parse(savedUser);
         setUser(parsedUser);
-        // Default module based on role
-        if (parsedUser.role === 'supplier' && activeModule === 'dashboard') {
-          setActiveModule('supplier-dashboard');
-        } else if (parsedUser.role === 'buyer' && activeModule === 'dashboard') {
-          setActiveModule('buyer-overview');
-        } else if (parsedUser.role === 'accountant' && activeModule === 'dashboard') {
-          setActiveModule('finance-dashboard');
-        } else if (parsedUser.role === 'warehouse_manager' && activeModule === 'dashboard') {
-          setActiveModule('warehouse-manager-dashboard');
-        } else if (parsedUser.role === 'driver' && activeModule === 'dashboard') {
-          setActiveModule('driver-dashboard');
-        }
       } catch (e) {
         console.error("Corrupted user data", e);
         localStorage.removeItem("erp_user");
@@ -105,6 +93,27 @@ function App() {
 
     fetchProducts();
   }, [fetchProducts]);
+
+  // Set default module when user changes
+  useEffect(() => {
+    if (user) {
+      if (user.role === 'supplier') {
+        setActiveModule('supplier-dashboard');
+      } else if (user.role === 'buyer') {
+        setActiveModule('buyer-overview');
+      } else if (user.role === 'accountant') {
+        setActiveModule('finance-dashboard');
+      } else if (user.role === 'warehouse_manager') {
+        setActiveModule('warehouse-manager-dashboard');
+      } else if (user.role === 'driver') {
+        setActiveModule('driver-dashboard');
+      } else if (user.role === 'dispatcher') {
+        setActiveModule('dispatcher-dashboard');
+      } else {
+        setActiveModule('dashboard');
+      }
+    }
+  }, [user]);
 
   const handleLogout = () => {
     localStorage.removeItem("erp_token");
@@ -197,7 +206,11 @@ function App() {
           )}
 
           {activeModule === "driver-dashboard" && (
-            <DriverDashboard push={push} />
+            <DriverDashboard push={push} user={user} />
+          )}
+
+          {activeModule === "dispatcher-dashboard" && (
+            <DriverDashboard push={push} user={user} />
           )}
 
           
