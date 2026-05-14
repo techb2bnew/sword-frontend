@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { API } from "../config";
 import Modal from "../components/Modal";
-import MapPicker from "../components/MapPicker";
 import RouteViewer from "../components/RouteViewer";
 
 export default function Transport({ push }) {
@@ -12,10 +11,7 @@ export default function Transport({ push }) {
   const [warehouses, setWarehouses] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const [originName, setOriginName] = useState("Loading...");
-  const [destinationName, setDestinationName] = useState("Loading...");
   const [selectedShipment, setSelectedShipment] = useState(null);
-  const [calculatedDistance, setCalculatedDistance] = useState(0);
 
   // Vehicle Form State
   const [showVModal, setShowVModal] = useState(false);
@@ -256,7 +252,7 @@ export default function Transport({ push }) {
           </div>
           {selectedShipment && (
             <Modal title={`Navigation: Shipment #SHP-${selectedShipment.id}`} onClose={() => setSelectedShipment(null)} hideConfirm>
-              <RouteViewer shipment={selectedShipment} onDistanceChange={setCalculatedDistance} />
+              <RouteViewer shipment={selectedShipment} />
               <div style={{ marginTop: 16, display: "flex", justifyContent: "space-between", fontSize: 12 }}>
                 <div><strong>From:</strong> {selectedShipment.origin_name}</div>
                 <div><strong>To:</strong> {selectedShipment.dest_name}</div>

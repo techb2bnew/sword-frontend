@@ -1,7 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import axios from "axios";
-import { API } from "../config";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
+import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 import generateMockData from "../mockData/financeData";
 
 export default function FinanceSalesRevenue({ push }) {
@@ -13,11 +11,10 @@ export default function FinanceSalesRevenue({ push }) {
     deliveredOrders: 0
   });
   const [monthlyData, setMonthlyData] = useState([]);
-  const [loading, setLoading] = useState(false);
 
   const fetchSalesData = useCallback(async () => {
     try {
-      setLoading(true);
+      // setLoading(true);
       const { salesOrders } = generateMockData();
       
       setSalesData(salesOrders);
@@ -55,8 +52,6 @@ export default function FinanceSalesRevenue({ push }) {
     } catch (err) {
       console.error('Error fetching sales data:', err);
       push("Using demo data", "info");
-    } finally {
-      setLoading(false);
     }
   }, [push]);
 

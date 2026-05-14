@@ -59,7 +59,6 @@ export default function CustomerOrders({ products, push, user }) {
   };
 
   const isAdmin = user?.role === 'admin' || user?.role === 'staff';
-  const isCustomer = user?.role === 'customer';
 
   const fetchData = useCallback(async () => {
     setLoading(true);

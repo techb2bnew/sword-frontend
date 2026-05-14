@@ -1,8 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { useMockStoreSnapshot } from "../mockData/mockHooks";
 import { actions } from "../mockData/mockStore";
-import { API } from "../config";
-import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Polyline, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "leaflet-defaulticon-compatibility";
@@ -24,11 +23,13 @@ function timeAgo(iso) {
 
 const BarcodeUI = ({ value }) => {
   const bars = useMemo(() => {
+    const seed = String(value).split('').reduce((a, b) => a + b.charCodeAt(0), 0);
     const arr = [];
     let x = 0;
     for (let i = 0; i < 40; i++) {
-      const width = Math.random() > 0.5 ? 2 : 1;
-      const opacity = Math.random() > 0.1 ? 1 : 0;
+      const pseudoRand = Math.abs(Math.sin(seed + i));
+      const width = pseudoRand > 0.5 ? 2 : 1;
+      const opacity = pseudoRand > 0.1 ? 1 : 0;
       arr.push({ x, width, opacity });
       x += width + 1;
     }
@@ -99,7 +100,6 @@ export default function DispatcherDashboard({ push, user }) {
   const unreadCount = notifications.filter((n) => !n.is_read).length;
   const activeAssignment = assignments.find((a) => a.status === "assigned" || a.status === "picking" || a.status === "in_transit");
   const completedToday = assignments.filter((a) => a.status === "delivered").length;
-  const totalItems = assignments.filter((a) => a.status !== "delivered").reduce((s, a) => s + a.items.filter((i) => !i.picked).length, 0);
 
   // Derive the current assignment from the live snapshot using the selected ID
   const currentAssignment = useMemo(() => {
@@ -163,7 +163,6 @@ export default function DispatcherDashboard({ push, user }) {
           unreadCount={unreadCount}
           activeAssignment={activeAssignment}
           completedToday={completedToday}
-          totalItems={totalItems}
           onNavigate={openNavigation}
           onDeliver={openDelivery}
           push={push}
@@ -196,7 +195,7 @@ export default function DispatcherDashboard({ push, user }) {
 // TAB 1: Dashboard
 // ═══════════════════════════════════════════════════════════════════════════════
 
-function DashboardTab({ assignments, notifications, unreadCount, activeAssignment, completedToday, totalItems, onNavigate, onDeliver, push, user }) {
+function DashboardTab({ assignments, notifications, unreadCount, activeAssignment, completedToday, onNavigate, onDeliver, push, user }) {
   const [showNotifications, setShowNotifications] = useState(false);
 
   const handleSimulateAssignment = () => {
@@ -520,7 +519,7 @@ function NavigateTab({ assignment, allBins, rackPositions, inventoryProducts, pu
           </div>
         </div>
         <div style={cardStyle}>
-          <WarehouseFloorPlan warehouseBins={warehouseBins} rackPositions={rackPositions} targetBinIds={targetBinIds} pickSequence={pickSequence} warehouseName={assignment.warehouse_name} />
+          <WarehouseFloorPlan targetBinIds={targetBinIds} pickSequence={pickSequence} warehouseName={assignment.warehouse_name} />
         </div>
       </div>
       {showScanner && <ScannerModal item={scanningItem} onScan={handleScan} onClose={() => setShowScanner(false)} error={scanError} />}
@@ -528,7 +527,7 @@ function NavigateTab({ assignment, allBins, rackPositions, inventoryProducts, pu
   );
 }
 
-function WarehouseFloorPlan({ warehouseBins, rackPositions, targetBinIds, pickSequence, warehouseName }) {
+function WarehouseFloorPlan({ pickSequence, warehouseName, targetBinIds }) {
   const OFFSET_X = 100;
   const OFFSET_Y = 100;
 

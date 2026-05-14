@@ -4,7 +4,7 @@ import { API } from "../config";
 
 export default function Dashboard({ products = [] }) {
   const [notifications, setNotifications] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [, setLoading] = useState(false);
 
   useEffect(() => {
     const fetchNotifications = async () => {

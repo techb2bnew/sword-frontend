@@ -1,7 +1,4 @@
 import React, { useState, useEffect, useCallback } from "react";
-import axios from "axios";
-import { API } from "../config";
-import Modal from "../components/Modal";
 import generateMockData from "../mockData/financeData";
 
 export default function FinancePurchaseOrders({ push }) {
@@ -9,8 +6,6 @@ export default function FinancePurchaseOrders({ push }) {
   const [stats, setStats] = useState({ total: "£0", pending: "£0", received: "£0", count: 0 });
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState("all");
-  const [showModal, setShowModal] = useState(false);
-  const [selectedPO, setSelectedPO] = useState(null);
 
   const fetchPurchaseOrders = useCallback(async () => {
     try {
@@ -133,7 +128,7 @@ export default function FinancePurchaseOrders({ push }) {
                   </td>
                   <td>{po.item_count || '-'}</td>
                   <td style={{ textAlign: 'right' }}>
-                    <button className="btn btn-secondary btn-sm" onClick={() => setSelectedPO(po)}>
+                    <button className="btn btn-secondary btn-sm">
                       View
                     </button>
                   </td>

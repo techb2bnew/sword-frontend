@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { API } from "../config";
 import Modal from "../components/Modal";
@@ -16,7 +16,7 @@ export default function SupplierQuotations({ products, push }) {
     notes: ""
   });
 
-  const fetchQuotations = async () => {
+  const fetchQuotations = useCallback(async () => {
     setLoading(true);
     try {
       const res = await axios.get(`${API}/quotations`, {
@@ -28,11 +28,11 @@ export default function SupplierQuotations({ products, push }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [push]);
 
   useEffect(() => {
     fetchQuotations();
-  }, []);
+  }, [fetchQuotations]);
 
   const handleSave = async () => {
     if (!form.product_id || !form.quantity || !form.unit_price) {

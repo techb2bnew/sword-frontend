@@ -72,7 +72,6 @@ export default function BuyerDashboard({ push }) {
   }, [inventoryProducts, suppliers]);
 
   const supplierProducts = productsBySupplier[String(form.supplier_id)] || [];
-  const selectedProduct = supplierProducts.find((p) => p.name === form.product_name) || null;
 
   const total = quotations.length;
   const pending = quotations.filter((q) => q.status === "Pending").length;

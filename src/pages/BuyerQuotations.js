@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import axios from "axios";
 
 import { installMockAxios } from "../mockData/mockApi";
@@ -24,13 +24,13 @@ export default function BuyerQuotations() {
 
   const token = localStorage.getItem("token");
 
-  const config = {
+  const config = useMemo(() => ({
     headers: {
       Authorization: `Bearer ${token}`,
     },
-  };
+  }), [token]);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       const [supplierRes, inventoryRes, quotationRes] = await Promise.all([
         axios.get(`${API}/suppliers`, config),
@@ -47,12 +47,12 @@ export default function BuyerQuotations() {
       setInventory([]);
       setQuotations([]);
     }
-  };
+  }, [config]);
 
   useEffect(() => {
     installMockAxios();
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   const handleProductChange = (e) => {
     const productId = e.target.value;

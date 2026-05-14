@@ -14,14 +14,10 @@ export default function Inventory({ products, onRefresh, push, user }) {
   const [loading, setLoading] = useState(false);
   const [editId, setEditId] = useState(null);
   const [showModal, setShowModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [deleteId, setDeleteId] = useState(null);
-  const [suppliers, setSuppliers] = useState([]);
 
   const [warehouses, setWarehouses] = useState([]);
   const [bins, setBins] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [supplierFilter, setSupplierFilter] = useState("all");
   const [expandedProduct, setExpandedProduct] = useState(null);
 
   const set = (k) => (e) => setForm((p) => ({ ...p, [k]: e.target.value }));
@@ -29,14 +25,12 @@ export default function Inventory({ products, onRefresh, push, user }) {
   const fetchData = useCallback(async () => {
     try {
       const headers = { Authorization: `Bearer ${localStorage.getItem("erp_token")}` };
-      const [wRes, bRes, sRes] = await Promise.all([
+      const [wRes, bRes] = await Promise.all([
         axios.get(`${API}/warehouse`, { headers }),
-        axios.get(`${API}/warehouse/bins`, { headers }),
-        axios.get(`${API}/purchases/suppliers`, { headers })
+        axios.get(`${API}/warehouse/bins`, { headers })
       ]);
       setWarehouses(wRes.data);
       setBins(bRes.data);
-      setSuppliers(sRes.data);
     } catch (err) { console.error("Failed to fetch data", err); }
   }, []);
 
@@ -90,25 +84,7 @@ export default function Inventory({ products, onRefresh, push, user }) {
     setShowModal(true);
   };
 
-  const confirmDelete = (id) => {
-    setDeleteId(id);
-    setShowDeleteModal(true);
-  };
 
-  const handleDelete = async () => {
-    setLoading(true);
-    try {
-      await axios.delete(`${API}/inventory/products/${deleteId}`);
-      push("Product deleted successfully!");
-      setShowDeleteModal(false);
-      setDeleteId(null);
-      await onRefresh();
-    } catch {
-      push("Failed to delete product", "error");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   if (!user) return null;
 
@@ -260,7 +236,6 @@ export default function Inventory({ products, onRefresh, push, user }) {
                       <td style={{ textAlign: 'right' }}>
                         <div style={{ display: 'flex', gap: 5, justifyContent: 'flex-end' }}>
                           <button className="btn btn-secondary btn-xs" onClick={() => handleEdit(wh.original)} style={{ padding: '2px 8px', fontSize: 10 }}>Edit</button>
-                          <button className="btn btn-danger btn-xs" onClick={() => confirmDelete(wh.id)} style={{ padding: '2px 8px', fontSize: 10 }}>✕</button>
                         </div>
                       </td>
                     </tr>

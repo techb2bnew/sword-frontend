@@ -16,7 +16,6 @@ import Dashboard from "./pages/Dashboard";
 import Inventory from "./pages/Inventory";
 import AdvancedInventory from "./pages/AdvancedInventory";
 import Purchases from "./pages/Purchases";
-import Sales from "./pages/Sales";
 import Transport from "./pages/Transport";
 import Warehouse from "./pages/Warehouse";
 import Finance from "./pages/Finance";

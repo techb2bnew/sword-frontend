@@ -35,16 +35,6 @@ const seedState = () => {
   ];
 
   // Geo-Presets for easy warehouse creation
-  const cityPresets = {
-    "Pune, MH": { lat: 18.5204, lng: 73.8567 },
-    "Mumbai, MH": { lat: 19.0760, lng: 72.8777 },
-    "Delhi, NCR": { lat: 28.6139, lng: 77.2090 },
-    "Bangalore, KA": { lat: 12.9716, lng: 77.5946 },
-    "Hyderabad, TS": { lat: 17.3850, lng: 78.4867 },
-    "Chennai, TN": { lat: 13.0827, lng: 80.2707 },
-    "Kolkata, WB": { lat: 22.5726, lng: 88.3639 },
-    "Ahmedabad, GJ": { lat: 23.0225, lng: 72.5714 }
-  };
 
   // Warehouse + bins (Inventory module uses these)
   const warehouses = [
@@ -59,41 +49,6 @@ const seedState = () => {
     { id: 4, warehouse_id: 2, rack_code: "R-B2", bin_code: "B-202", status: "Available", barcode: "BIN-B2-202", capacity: 5000 },
   ];
 
-  const lookupByBarcode = (barcode) => {
-    // Search in bins (Rack lookup)
-    const bin = bins.find(b => b.barcode === barcode);
-    if (bin) {
-      const warehouse = warehouses.find(w => w.id === bin.warehouse_id);
-      const product = inventory.find(p => p.bin_id === bin.id);
-      return {
-        type: "bin",
-        id: bin.id,
-        warehouse_name: warehouse?.name,
-        rack_code: bin.rack_code,
-        bin_code: bin.bin_code,
-        barcode: bin.barcode,
-        product: product || null
-      };
-    }
-
-    // Search in products (Item lookup)
-    const product = inventory.find(p => p.barcode === barcode);
-    if (product) {
-      const bin = bins.find(b => b.id === product.bin_id);
-      const warehouse = warehouses.find(w => w.id === product.warehouse_id);
-      return {
-        type: "product",
-        id: product.id,
-        name: product.name,
-        barcode: product.barcode,
-        stock: product.stock,
-        warehouse_name: warehouse?.name,
-        location: bin ? `${bin.rack_code}/${bin.bin_code}` : "Unassigned"
-      };
-    }
-
-    return null;
-  };
 
   // Inventory products entries (what /inventory/products returns)
   // Inventory.js expects to receive array with fields used in grouping:
@@ -749,8 +704,6 @@ export const actions = {
     const baseId = Math.max(0, ...(state.warehouse.bins || []).map(b => b.id)) + 1;
     
     // Logic for geolocation offset (approximate)
-    const latMeters = 111111;
-    const lngMeters = 111111 * Math.cos(baseLat * Math.PI / 180);
 
     for (let i = 1; i <= bin_count; i++) {
       // Default offset for new racks is [0, 0, 0] in 3D

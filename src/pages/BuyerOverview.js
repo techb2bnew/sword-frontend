@@ -124,12 +124,11 @@ export default function BuyerOverview({ push, setActiveModule }) {
     ].slice(0, 5);
 
     // Month spend approximation from purchaseOrders order_date buckets (last 7 "months" labels)
-    const now = new Date();
+    
     const monthLabels = ["Nov", "Dec", "Jan", "Feb", "Mar", "Apr", "May"];
     const monthlySpend = monthLabels.map((label) => ({ month: label, spend: 0 }));
 
     const labelToMonthIndex = { Nov: 10, Dec: 11, Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4 };
-    const year = now.getFullYear();
 
     for (const p of purchaseOrders) {
       if (!p?.order_date) continue;
