@@ -417,10 +417,10 @@ function NavigateTab({ assignment, allBins, rackPositions, inventoryProducts, pu
   const [scanningItem, setScanningItem] = useState(null);
   const [scanError, setScanError] = useState("");
 
-  const warehouseBins = useMemo(() => {
-    if (!assignment) return [];
-    return allBins.filter((b) => String(b.warehouse_id) === String(assignment.warehouse_id));
-  }, [allBins, assignment]);
+  // const warehouseBins = useMemo(() => {
+  //   if (!assignment) return [];
+  //   return allBins.filter((b) => String(b.warehouse_id) === String(assignment.warehouse_id));
+  // }, [allBins, assignment]);
 
   const pickSequence = useMemo(() => {
     if (!assignment) return [];
