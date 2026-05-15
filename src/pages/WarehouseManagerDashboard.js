@@ -65,13 +65,96 @@ const calculateGeo = (baseLat, baseLng, offset) => {
   return { lat: newLat.toFixed(7), lng: newLng.toFixed(7) };
 };
 
+/* ---------------------- 2D Floor Plan Component ---------------------- */
+
+function WarehouseFloorPlan({ warehouseName, targetBinIds = new Set(["R-B1", "R-B2"]) }) {
+  const OFFSET_X = 100;
+  const OFFSET_Y = 100;
+
+  const warehouseLayout = useMemo(() => {
+    const racks = [];
+    for (let r = 0; r < 5; r++) {
+      for (let c = 0; c < 4; c++) {
+        const code = `R-${String.fromCharCode(65 + r)}${c + 1}`;
+        const isTarget = targetBinIds.has(code);
+        racks.push({ code, x: c * 100 + OFFSET_X, y: r * 70 + OFFSET_Y, isTarget });
+      }
+    }
+    return racks;
+  }, [targetBinIds]);
+
+  const walkingPath = useMemo(() => {
+    const points = [[50, 420]]; 
+    ["R-B1", "R-B2"].forEach(code => {
+      const rack = warehouseLayout.find(r => r.code === code);
+      if (rack) points.push([rack.x + 25, rack.y + 35]);
+    });
+    points.push([550, 50]);
+    return points;
+  }, [warehouseLayout]);
+
+  return (
+    <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+      <div style={{ padding: "14px 20px", borderBottom: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <h4 style={{ margin: 0 }}>📍 Spatial Logistics — {warehouseName}</h4>
+        <div style={{ display: "flex", gap: 12 }}>
+           <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10, fontWeight: 700 }}><span style={{ width: 10, height: 10, background: "#2563eb", borderRadius: 2 }}></span> TARGET</div>
+           <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10, fontWeight: 700 }}><span style={{ width: 10, height: 10, background: "#e2e8f0", borderRadius: 2 }}></span> STORAGE</div>
+        </div>
+      </div>
+
+      <div style={{ background: "#f8fafc", height: 500, position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", top: 16, right: 16, width: 220, background: "rgba(255,255,255,0.95)", backdropFilter: "blur(8px)", padding: 18, borderRadius: 20, border: "1px solid rgba(0,0,0,0.05)", zIndex: 10, boxShadow: "0 10px 25px rgba(0,0,0,0.05)" }}>
+           <div style={{ fontSize: 11, fontWeight: 800, color: "#6366f1", marginBottom: 8, letterSpacing: 0.5 }}>OPERATIONAL GUIDANCE</div>
+           <div style={{ fontSize: 12, lineHeight: 1.5, color: "#475569" }}>
+             Follow the <strong style={{ color: "#f97316" }}>orange path</strong>. Pick items sequentially from highlighted racks.
+           </div>
+           <div style={{ marginTop: 12, pt: 12, borderTop: "1px solid #f1f5f9", display: "flex", justifyContent: "space-between" }}>
+              <div style={{ textAlign: "center" }}><div style={{ fontSize: 9, color: "#94a3b8" }}>EST. TIME</div><div style={{ fontSize: 13, fontWeight: 700 }}>4.5m</div></div>
+              <div style={{ textAlign: "center" }}><div style={{ fontSize: 9, color: "#94a3b8" }}>DISTANCE</div><div style={{ fontSize: 13, fontWeight: 700 }}>120m</div></div>
+           </div>
+        </div>
+
+        <svg width="100%" height="100%" viewBox="0 0 600 500">
+          <defs>
+            <pattern id="floor-grid" width="40" height="40" patternUnits="userSpaceOnUse">
+              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(0,0,0,0.02)" strokeWidth="1"/>
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#floor-grid)" />
+          <rect x="20" y="20" width="560" height="460" fill="none" stroke="#cbd5e1" strokeWidth="2" strokeDasharray="8 4" opacity="0.2" />
+
+          <g>
+             <circle cx="50" cy="420" r="14" fill="#22c55e" stroke="white" strokeWidth="3" />
+             <text x="50" y="445" textAnchor="middle" fontSize="9" fontWeight="800" fill="#166534">LOADING DOCK</text>
+          </g>
+
+          {walkingPath.length > 1 && (
+            <polyline points={walkingPath.map(p => p.join(",")).join(" ")} fill="none" stroke="#f97316" strokeWidth="3" strokeDasharray="10 6" strokeLinecap="round" />
+          )}
+
+          {warehouseLayout.map((rack) => (
+            <g key={rack.code}>
+              <rect x={rack.x} y={rack.y} width="55" height="38" rx="8" fill={rack.isTarget ? "#2563eb" : "#ffffff"} stroke={rack.isTarget ? "#1d4ed8" : "#e2e8f0"} strokeWidth={rack.isTarget ? "2" : "1"} style={{ filter: rack.isTarget ? "drop-shadow(0 6px 12px rgba(37,99,235,0.4))" : "none" }} />
+              <text x={rack.x + 27} y={rack.y + 24} textAnchor="middle" fontSize="9" fontWeight="900" fill={rack.isTarget ? "white" : "#94a3b8"}>{rack.code}</text>
+              {rack.isTarget && (
+                <circle cx={rack.x + 55} cy={rack.y} r="6" fill="#ef4444" stroke="white" strokeWidth="2" />
+              )}
+            </g>
+          ))}
+        </svg>
+      </div>
+    </div>
+  );
+}
+
 /* ---------------------- 3D Components ---------------------- */
 
-function Bin3D({ bin, position, onSelect, selected, hideLabels }) {
+function Bin3D({ bin, position, onSelect, selected, hideLabels, selectedBin }) {
   const stock = bin.stock || 0;
   const capacity = bin.capacity || 5000;
   const fillRatio = Math.max(0, Math.min(stock / capacity, 1));
-  const fillHeight = Math.max(fillRatio * 1.8, stock > 0 ? 0.08 : 0);
+  const fillHeight = Math.max(fillRatio * 1.5, stock > 0 ? 0.05 : 0);
   const statusColor = getStatusColor(fillRatio);
   const isLow = fillRatio > 0 && fillRatio <= 0.25;
 
@@ -83,22 +166,26 @@ function Bin3D({ bin, position, onSelect, selected, hideLabels }) {
     }
   });
 
+  const isDimmed = selectedBin && selectedBin.id !== bin.id;
+
   return (
     <group position={position}>
+      {/* Bin Outer Shell */}
       <mesh onClick={(e) => { e.stopPropagation(); onSelect(bin); }} castShadow receiveShadow>
-        <boxGeometry args={[1.8, 2, 1.8]} />
-        <meshStandardMaterial color={selected ? "#4f46e5" : "#e5e7eb"} transparent opacity={0.8} />
+        <boxGeometry args={[1.6, 1.2, 1.6]} />
+        <meshStandardMaterial color={selected ? "#2563eb" : "#cbd5e1"} metalness={0.2} roughness={0.5} transparent opacity={isDimmed ? 0.4 : 0.9} />
       </mesh>
+      {/* Stock Fill */}
       {stock > 0 && (
-        <mesh ref={contentRef} position={[0, -1 + fillHeight / 2, 0]} castShadow>
-          <boxGeometry args={[1.5, fillHeight, 1.5]} />
-          <meshStandardMaterial color={statusColor} emissive={isLow ? statusColor : "#000000"} emissiveIntensity={isLow ? 0.5 : 0} />
+        <mesh ref={contentRef} position={[0, -0.55 + fillHeight / 2, 0]} castShadow>
+          <boxGeometry args={[1.4, fillHeight, 1.4]} />
+          <meshStandardMaterial color={statusColor} emissive={isLow ? statusColor : "#000000"} emissiveIntensity={isLow ? 0.5 : 0} transparent opacity={isDimmed ? 0.3 : 1} />
         </mesh>
       )}
-      {!hideLabels && (
-        <Html position={[0, 1.35, 0]} center style={{ pointerEvents: 'none' }}>
-          <div style={{ background: isLow ? "#ef4444" : "rgba(255,255,255,0.9)", color: isLow ? "white" : "#111827", padding: "2px 6px", borderRadius: 4, fontSize: 8, fontWeight: 800, whiteSpace: "nowrap", border: "1px solid #e5e7eb", boxShadow: isLow ? "0 0 10px rgba(239, 68, 68, 0.5)" : "none" }}>
-            {isLow ? "⚠️ " : ""}{bin.bin_code}
+      {selected && !hideLabels && (
+        <Html position={[0, 0.8, 0]} center style={{ pointerEvents: 'none' }}>
+          <div style={{ background: isLow ? "#ef4444" : "rgba(255,255,255,0.95)", color: isLow ? "white" : "#1e293b", padding: "4px 8px", borderRadius: 6, fontSize: 10, fontWeight: 900, whiteSpace: "nowrap", border: "2px solid #2563eb", boxShadow: "0 6px 15px rgba(0,0,0,0.2)" }}>
+            {bin.bin_code}
           </div>
         </Html>
       )}
@@ -108,9 +195,13 @@ function Bin3D({ bin, position, onSelect, selected, hideLabels }) {
 
 function Rack3D({ rackCode, bins, position, onSelectBin, selectedBin, hideLabels, onMove }) {
   const columns = 2;
-  const colGap = 2.4;
-  const rowGap = 2.5;
+  const levels = 4;
+  const colGap = 2.5;
+  const rowHeight = 2.8;
   const rackRef = React.useRef();
+
+  const isRackFocused = !selectedBin || bins.some(b => b.id === selectedBin.id);
+  const dimOpacity = 0.4;
 
   return (
     <group position={position}>
@@ -124,19 +215,81 @@ function Rack3D({ rackCode, bins, position, onSelectBin, selectedBin, hideLabels
         }}
       >
         <group ref={rackRef}>
-          <mesh position={[0.8, -1.2, 2.5]} receiveShadow><boxGeometry args={[6.2, 0.2, 8.2]} /><meshStandardMaterial color="#64748b" /></mesh>
-          {!hideLabels && (
-            <Html position={[0.8, 4.2, 2.5]} center style={{ pointerEvents: 'none' }}>
-              <div style={{ background: "#ffffff", color: "#2563eb", padding: "4px 10px", borderRadius: 8, fontSize: 12, fontWeight: 800, boxShadow: "0 4px 12px rgba(0,0,0,0.12)", border: "1px solid #e5e7eb" }}>{rackCode}</div>
+          {/* Vertical Pillars - Dim if not focused */}
+          <mesh position={[-1.2, 4.3, 0]} castShadow><boxGeometry args={[0.2, 11.5, 0.2]} /><meshStandardMaterial color="#1e293b" transparent opacity={isRackFocused ? 1 : dimOpacity} /></mesh>
+          <mesh position={[2.8, 4.3, 0]} castShadow><boxGeometry args={[0.2, 11.5, 0.2]} /><meshStandardMaterial color="#1e293b" transparent opacity={isRackFocused ? 1 : dimOpacity} /></mesh>
+          <mesh position={[-1.2, 4.3, 2.8]} castShadow><boxGeometry args={[0.2, 11.5, 0.2]} /><meshStandardMaterial color="#1e293b" transparent opacity={isRackFocused ? 1 : dimOpacity} /></mesh>
+          <mesh position={[2.8, 4.3, 2.8]} castShadow><boxGeometry args={[0.2, 11.5, 0.2]} /><meshStandardMaterial color="#1e293b" transparent opacity={isRackFocused ? 1 : dimOpacity} /></mesh>
+
+          {/* Horizontal Beams */}
+          {[0, 1, 2, 3, 4].map(l => (
+            <group key={l} position={[0, l * rowHeight - 1, 1.4]}>
+               <mesh position={[0.8, 0, -1.4]} castShadow><boxGeometry args={[4.2, 0.15, 0.2]} /><meshStandardMaterial color="#334155" transparent opacity={isRackFocused ? 1 : dimOpacity} /></mesh>
+               <mesh position={[0.8, 0, 1.4]} castShadow><boxGeometry args={[4.2, 0.15, 0.2]} /><meshStandardMaterial color="#334155" transparent opacity={isRackFocused ? 1 : dimOpacity} /></mesh>
+               <mesh position={[0.8, -0.05, 0]} receiveShadow><boxGeometry args={[4, 0.05, 2.8]} /><meshStandardMaterial color="#475569" transparent opacity={isRackFocused ? 0.5 : dimOpacity} /></mesh>
+            </group>
+          ))}
+
+          {isRackFocused && !hideLabels && (
+            <Html position={[0.8, 11.2, 1.4]} center style={{ pointerEvents: 'none' }}>
+              <div style={{ background: "#ffffff", color: "#2563eb", padding: "4px 14px", borderRadius: 10, fontSize: 13, fontWeight: 900, boxShadow: "0 8px 20px rgba(0,0,0,0.2)", border: "2px solid #2563eb", whiteSpace: "nowrap" }}>
+                RACK {rackCode}
+              </div>
             </Html>
           )}
+
           {bins.map((bin, index) => {
-            const row = Math.floor(index / columns);
+            const level = Math.floor(index / columns);
             const col = index % columns;
-            return <Bin3D key={bin.id} bin={bin} position={[col * colGap - 1.2, 0, row * rowGap]} onSelect={onSelectBin} selected={selectedBin?.id === bin.id} hideLabels={hideLabels} />;
+            // Limit to 2 levels for visual clarity in this layout
+            if (level >= levels) return null;
+            
+            return <Bin3D 
+              key={bin.id} 
+              bin={bin} 
+              position={[col * colGap - 0.4, level * rowHeight - 0.4, 1.4]} 
+              onSelect={onSelectBin} 
+              selected={selectedBin?.id === bin.id} 
+              hideLabels={hideLabels} 
+              selectedBin={selectedBin}
+            />;
           })}
         </group>
       </PivotControls>
+    </group>
+  );
+}
+
+function WarehouseFloor() {
+  return (
+    <group>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.21, 0]} receiveShadow>
+        <planeGeometry args={[200, 200]} />
+        <meshStandardMaterial color="#f8fafc" metalness={0.05} roughness={0.7} />
+      </mesh>
+      {/* Decorative Floor Markings */}
+      <Grid position={[0, -1.2, 0]} args={[200, 200]} cellSize={2} sectionSize={10} cellColor="#e2e8f0" sectionColor="#cbd5e1" fadeDistance={150} />
+    </group>
+  );
+}
+
+function WarehouseStructure() {
+  return (
+    <group>
+      {/* Back Wall */}
+      <mesh position={[0, 15, -100]} receiveShadow>
+        <boxGeometry args={[200, 35, 2]} />
+        <meshStandardMaterial color="#cbd5e1" transparent opacity={0.15} />
+      </mesh>
+      {/* Side Walls */}
+      <mesh position={[-100, 15, 0]} receiveShadow>
+        <boxGeometry args={[2, 35, 200]} />
+        <meshStandardMaterial color="#cbd5e1" transparent opacity={0.15} />
+      </mesh>
+      <mesh position={[100, 15, 0]} receiveShadow>
+        <boxGeometry args={[2, 35, 200]} />
+        <meshStandardMaterial color="#cbd5e1" transparent opacity={0.15} />
+      </mesh>
     </group>
   );
 }
@@ -168,7 +321,7 @@ export default function WarehouseManagerDashboard({ products: allProducts, push,
   // Forms
   const [prodForm, setProdForm] = useState({ name: "", price: "", barcode: "", stock: 0, warehouse_id: "", bin_id: "" });
   const [rackForm, setRackForm] = useState({ warehouse_id: "", rack_code: "", bin_count: 4 });
-  const [warehouseForm, setWarehouseForm] = useState({ name: "", city: "Pune, MH" });
+  const [warehouseForm, setWarehouseForm] = useState({ name: "", city: "London" });
 
   const fetchData = useCallback(async () => {
     try {
@@ -201,7 +354,19 @@ export default function WarehouseManagerDashboard({ products: allProducts, push,
       const product = allProducts.find(p => p.bin_id === bin.id);
       const rackPos = rackPositions[bin.rack_code] || [0, 0, 0];
       const geo = currentWarehouse ? calculateGeo(currentWarehouse.lat, currentWarehouse.lng, rackPos) : { lat: "-", lng: "-" };
-      groups[bin.rack_code].push({ ...bin, product_name: product?.name || "", stock: product?.stock || 0, capacity: bin.capacity || 5000, geo_lat: geo.lat, geo_lng: geo.lng });
+      
+      // FIX: Use bin's own seeded data if no linked product is found in the global list
+      const finalName = product?.name || bin.product_name || "Assorted Goods";
+      const finalStock = product?.stock !== undefined ? product.stock : (bin.stock || 0);
+
+      groups[bin.rack_code].push({ 
+        ...bin, 
+        product_name: finalName, 
+        stock: finalStock, 
+        capacity: bin.capacity || 5000, 
+        geo_lat: geo.lat, 
+        geo_lng: geo.lng 
+      });
     });
     return groups;
   }, [bins, allProducts, rackPositions, currentWarehouse, selectedWarehouseId]);
@@ -302,6 +467,7 @@ export default function WarehouseManagerDashboard({ products: allProducts, push,
 
       <div className="login-tab-row" style={{ marginBottom: 20, justifyContent: "flex-start", gap: 10 }}>
         <button className={`login-tab ${activeTab === "3d-view" ? "active" : ""}`} onClick={() => setActiveTab("3d-view")}>3D Spatial View</button>
+        <button className={`login-tab ${activeTab === "layout-map" ? "active" : ""}`} onClick={() => setActiveTab("layout-map")}>Top View</button>
         <button className={`login-tab ${activeTab === "geo-sync" ? "active" : ""}`} onClick={() => setActiveTab("geo-sync")}>Geo-Sync Tracking</button>
         <button className={`login-tab ${activeTab === "inventory" ? "active" : ""}`} onClick={() => setActiveTab("inventory")}>Inventory List</button>
       </div>
@@ -310,10 +476,19 @@ export default function WarehouseManagerDashboard({ products: allProducts, push,
         {activeTab === "3d-view" && (
           <div style={{ display: "flex", height: "100%", gap: 20 }}>
             <div style={{ flex: 1, background: "#f8fafc", borderRadius: 20, border: "1px solid var(--border)", overflow: "hidden", position: "relative" }}>
-              <Canvas shadows>
-                <PerspectiveCamera makeDefault position={[0, 20, 30]} /><OrbitControls makeDefault maxPolarAngle={Math.PI / 2.1} /><ambientLight intensity={0.7} /><directionalLight position={[10, 20, 10]} intensity={1.5} castShadow /><Grid position={[0, -1.2, 0]} args={[100, 100]} cellSize={1} sectionSize={5} cellColor="#cbd5e1" sectionColor="#94a3b8" />
+              <Canvas shadows camera={{ position: [50, 50, 70], fov: 45 }}>
+                <fog attach="fog" args={["#f8fafc", 60, 180]} />
+                <PerspectiveCamera makeDefault position={[50, 50, 70]} />
+                <OrbitControls makeDefault maxPolarAngle={Math.PI / 2.1} minDistance={10} maxDistance={200} />
+                <ambientLight intensity={0.8} />
+                <pointLight position={[0, 50, 0]} intensity={1.2} />
+                <directionalLight position={[50, 50, 50]} intensity={1.5} castShadow shadow-mapSize={[2048, 2048]} />
+                
+                <WarehouseFloor />
+                <WarehouseStructure />
+
                 {Object.keys(rackGroups).map((code, idx) => {
-                  const savedPos = rackPositions[code] || [idx * 12 - 15, 0, -4];
+                  const savedPos = rackPositions[code] || [(idx % 5) * 15 - 30, 0, Math.floor(idx / 5) * 12 - 20];
                   return <Rack3D key={code} rackCode={code} bins={rackGroups[code]} position={savedPos} onSelectBin={handleBinSelect} selectedBin={selectedBin} hideLabels={showAddModal || showRackModal || showWarehouseModal || showScanModal} onMove={handleUpdateRackPosition} />;
                 })}
               </Canvas>
@@ -330,16 +505,22 @@ export default function WarehouseManagerDashboard({ products: allProducts, push,
                   <div style={{ background: "#f8fafc", padding: 15, borderRadius: 16, border: "1px solid #f1f5f9" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
                        <div style={{ fontSize: 10, fontWeight: 800, color: "#64748b" }}>STOCK LEVEL</div>
-                       <div style={{ fontSize: 10, fontWeight: 800, color: getStatusColor(selectedBin.stock / selectedBin.capacity) }}>{Math.round((selectedBin.stock / selectedBin.capacity) * 100)}% {selectedBin.stock / selectedBin.capacity <= 0.25 ? "🚨 LOW" : "✅ STABLE"}</div>
+                       <div style={{ fontSize: 10, fontWeight: 800, color: getStatusColor(selectedBin.stock / (selectedBin.capacity || 5000)) }}>{Math.round((selectedBin.stock / (selectedBin.capacity || 5000)) * 100)}% {selectedBin.stock / (selectedBin.capacity || 5000) <= 0.25 ? "🚨 LOW" : "✅ STABLE"}</div>
                     </div>
-                    <div style={{ width: "100%", height: 8, background: "#e2e8f0", borderRadius: 4, overflow: "hidden" }}><div style={{ width: `${(selectedBin.stock / selectedBin.capacity) * 100}%`, height: "100%", background: getStatusColor(selectedBin.stock / selectedBin.capacity), transition: "width 0.5s ease" }} /></div>
+                    <div style={{ width: "100%", height: 8, background: "#e2e8f0", borderRadius: 4, overflow: "hidden" }}><div style={{ width: `${(selectedBin.stock / (selectedBin.capacity || 5000)) * 100}%`, height: "100%", background: getStatusColor(selectedBin.stock / (selectedBin.capacity || 5000)), transition: "width 0.5s ease" }} /></div>
                   </div>
-                  <div style={{ background: "#f8fafc", padding: 12, borderRadius: 12, border: "1px solid #f1f5f9" }}><div style={{ fontSize: 10, fontWeight: 700, color: "#64748b", textTransform: "uppercase", marginBottom: 6 }}>🛰️ GPS Coordinates</div><div style={{ fontSize: 12, fontFamily: "monospace" }}>Lat: {selectedBin.geo_lat}</div><div style={{ fontSize: 12, fontFamily: "monospace" }}>Lng: {selectedBin.geo_lng}</div></div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}><div style={{ background: "#f1f5f9", padding: 10, borderRadius: 10 }}><div style={{ fontSize: 9, opacity: 0.6 }}>ITEM</div><div style={{ fontWeight: 600, fontSize: 12 }}>{selectedBin.product_name || "Empty"}</div></div><div style={{ background: "#f1f5f9", padding: 10, borderRadius: 10 }}><div style={{ fontSize: 9, opacity: 0.6 }}>STOCK</div><div style={{ fontWeight: 600, fontSize: 12 }}>{selectedBin.stock} units</div></div></div>
+                  <div style={{ background: "#f8fafc", padding: 12, borderRadius: 12, border: "1px solid #f1f5f9" }}><div style={{ fontSize: 10, fontWeight: 700, color: "#64748b", textTransform: "uppercase", marginBottom: 6 }}>🛰️ GPS Coordinates</div><div style={{ fontSize: 12, fontFamily: "monospace" }}>Lat: {selectedBin.geo_lat || selectedBin.lat}</div><div style={{ fontSize: 12, fontFamily: "monospace" }}>Lng: {selectedBin.geo_lng || selectedBin.lng}</div></div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}><div style={{ background: "#f1f5f9", padding: 10, borderRadius: 10 }}><div style={{ fontSize: 9, opacity: 0.6 }}>ITEM</div><div style={{ fontWeight: 600, fontSize: 12 }}>{selectedBin.product_name || "Assorted Goods"}</div></div><div style={{ background: "#f1f5f9", padding: 10, borderRadius: 10 }}><div style={{ fontSize: 9, opacity: 0.6 }}>STOCK</div><div style={{ fontWeight: 600, fontSize: 12 }}>{selectedBin.stock} units</div></div></div>
                   <button className="btn btn-secondary" style={{ marginTop: 10, width: "100%" }} onClick={() => setShowAddModal(true)}>Modify Stock</button>
                 </div>
               ) : (<div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", textAlign: "center", color: "#94a3b8" }}><div style={{ fontSize: 40, marginBottom: 10 }}>🛰️</div><div style={{ fontSize: 12 }}>Select a bin to see its precise global GPS coordinates</div></div>)}
             </div>
+          </div>
+        )}
+
+        {activeTab === "layout-map" && (
+          <div className="fade-up" style={{ height: "100%" }}>
+            <WarehouseFloorPlan warehouseName={currentWarehouse?.name} />
           </div>
         )}
 

@@ -10,21 +10,21 @@ const DUMMY_INVOICES = [
   {
     id: 1001,
     type: "invoice",
-    counterparty_name: "Amit Sharma",
+    counterparty_name: "James Smith",
     counterparty_id: "CUST-001",
     issue_date: "2026-05-01",
     due_date: "2026-05-15",
     status: "Sent",
-    currency: "EUR",
-    gst_rate: 18,
+    currency: "GBP",
+    vat_rate: 20,
     taxable_amount: 25000,
-    gst_amount: 4500,
-    total_amount: 29500,
+    vat_amount: 5000,
+    total_amount: 30000,
     amount_paid: 0,
     notes: "Payment due within 14 days.",
     items: [
       {
-        description: "Website development service",
+        description: "Logistics consulting service",
         quantity: 1,
         unit_price: 25000,
         line_total: 25000,
@@ -34,21 +34,21 @@ const DUMMY_INVOICES = [
   {
     id: 1002,
     type: "invoice",
-    counterparty_name: "Rahul Enterprises",
+    counterparty_name: "Global Retail Mart",
     counterparty_id: "CUST-002",
     issue_date: "2026-04-20",
     due_date: "2026-05-02",
     status: "Partially Paid",
-    currency: "EUR",
-    gst_rate: 18,
+    currency: "GBP",
+    vat_rate: 20,
     taxable_amount: 50000,
-    gst_amount: 9000,
-    total_amount: 59000,
+    vat_amount: 10000,
+    total_amount: 60000,
     amount_paid: 30000,
     notes: "Remaining payment pending.",
     items: [
       {
-        description: "Digital marketing package",
+        description: "Warehouse management package",
         quantity: 1,
         unit_price: 50000,
         line_total: 50000,
@@ -58,21 +58,21 @@ const DUMMY_INVOICES = [
   {
     id: 1003,
     type: "invoice",
-    counterparty_name: "Base2Brand Client",
+    counterparty_name: "Metro Logistics Group",
     counterparty_id: "CUST-003",
     issue_date: "2026-04-01",
     due_date: "2026-04-10",
     status: "Paid",
-    currency: "EUR",
-    gst_rate: 18,
+    currency: "GBP",
+    vat_rate: 20,
     taxable_amount: 15000,
-    gst_amount: 2700,
-    total_amount: 17700,
-    amount_paid: 17700,
+    vat_amount: 3000,
+    total_amount: 18000,
+    amount_paid: 18000,
     notes: "Paid successfully.",
     items: [
       {
-        description: "Landing page design",
+        description: "Route optimization service",
         quantity: 1,
         unit_price: 15000,
         line_total: 15000,
@@ -82,16 +82,16 @@ const DUMMY_INVOICES = [
   {
     id: 2001,
     type: "bill",
-    counterparty_name: "Hosting Provider",
+    counterparty_name: "Cloud Hosting UK",
     counterparty_id: "VEND-001",
     issue_date: "2026-05-01",
     due_date: "2026-05-08",
     status: "Draft",
-    currency: "EUR",
-    gst_rate: 18,
+    currency: "GBP",
+    vat_rate: 20,
     taxable_amount: 6000,
-    gst_amount: 1080,
-    total_amount: 7080,
+    vat_amount: 1200,
+    total_amount: 7200,
     amount_paid: 0,
     notes: "Monthly hosting bill.",
     items: [
@@ -111,7 +111,7 @@ const todayISO = () => new Date().toISOString().split("T")[0];
 
 const createLineItemId = () => `${Date.now()}-${Math.random()}`;
 
-const formatMoney = (value, currency = "EUR") => {
+const formatMoney = (value, currency = "GBP") => {
   const amount = Number(value || 0);
 
   const symbolMap = {
@@ -125,7 +125,7 @@ const formatMoney = (value, currency = "EUR") => {
 
   if (!Number.isFinite(amount)) return `${symbol}0`;
 
-  return `${symbol}${amount.toLocaleString("en-IN", {
+  return `${symbol}${amount.toLocaleString("en-GB", {
     maximumFractionDigits: 2,
   })}`;
 };
@@ -198,10 +198,10 @@ const buildInitialForm = () => ({
   issue_date: todayISO(),
   due_date: todayISO(),
   status: "Draft",
-  currency: "INR",
-  gst_rate: 0,
+  currency: "GBP",
+  vat_rate: 0,
   taxable_amount: "0",
-  gst_amount: "0",
+  vat_amount: "0",
   total_amount: "0",
   notes: "",
 });
@@ -329,26 +329,26 @@ const Invoices = ({ push }) => {
     };
   }, []);
 
-  const computeTotals = (lines, gstRateValue) => {
+  const computeTotals = (lines, vatRateValue) => {
     const subtotal = lines.reduce((sum, item) => {
       return sum + Number(item.quantity || 0) * Number(item.unit_price || 0);
     }, 0);
 
-    const gstRate = Number(gstRateValue || 0);
-    const gst = subtotal * (gstRate / 100);
-    const total = subtotal + gst;
+    const vatRate = Number(vatRateValue || 0);
+    const vat = subtotal * (vatRate / 100);
+    const total = subtotal + vat;
 
-    return { subtotal, gst, total };
+    return { subtotal, vat, total };
   };
 
-  const applyTotalsToForm = (nextLines, nextGstRate) => {
-    const totals = computeTotals(nextLines, nextGstRate);
+  const applyTotalsToForm = (nextLines, nextVatRate) => {
+    const totals = computeTotals(nextLines, nextVatRate);
 
     setForm((prev) => ({
       ...prev,
-      gst_rate: nextGstRate,
+      vat_rate: nextVatRate,
       taxable_amount: String(totals.subtotal),
-      gst_amount: String(totals.gst),
+      vat_amount: String(totals.vat),
       total_amount: String(totals.total),
     }));
   };
@@ -433,7 +433,7 @@ const Invoices = ({ push }) => {
       return sum + Number(item.total_amount || 0);
     }, 0);
 
-    const currency = itemsOfType[0]?.currency || "EUR";
+    const currency = itemsOfType[0]?.currency || "GBP";
 
     return { total, totalVal, outstanding, paid, currency };
   }, [items, filterType]);
@@ -483,13 +483,13 @@ const Invoices = ({ push }) => {
         [field]: value,
       };
 
-      if (field === "gst_rate") {
+      if (field === "vat_rate") {
         const totals = computeTotals(lineItems, value);
 
         return {
           ...nextForm,
           taxable_amount: String(totals.subtotal),
-          gst_amount: String(totals.gst),
+          vat_amount: String(totals.vat),
           total_amount: String(totals.total),
         };
       }
@@ -509,7 +509,7 @@ const Invoices = ({ push }) => {
     });
 
     setLineItems(nextLineItems);
-    applyTotalsToForm(nextLineItems, form.gst_rate);
+    applyTotalsToForm(nextLineItems, form.vat_rate);
   };
 
   const addLineItem = () => {
@@ -524,7 +524,7 @@ const Invoices = ({ push }) => {
     ];
 
     setLineItems(nextLineItems);
-    applyTotalsToForm(nextLineItems, form.gst_rate);
+    applyTotalsToForm(nextLineItems, form.vat_rate);
   };
 
   const removeLineItem = (id) => {
@@ -536,7 +536,7 @@ const Invoices = ({ push }) => {
     const nextLineItems = lineItems.filter((item) => item.id !== id);
 
     setLineItems(nextLineItems);
-    applyTotalsToForm(nextLineItems, form.gst_rate);
+    applyTotalsToForm(nextLineItems, form.vat_rate);
   };
 
   const onCreate = async () => {
@@ -568,7 +568,7 @@ const Invoices = ({ push }) => {
       return;
     }
 
-    const totals = computeTotals(lineItems, form.gst_rate);
+    const totals = computeTotals(lineItems, form.vat_rate);
 
     const newItem = {
       id: Date.now(),
@@ -579,9 +579,9 @@ const Invoices = ({ push }) => {
       due_date: form.due_date,
       status: form.status,
       currency: form.currency,
-      gst_rate: Number(form.gst_rate || 0),
+      vat_rate: Number(form.vat_rate || 0),
       taxable_amount: totals.subtotal,
-      gst_amount: totals.gst,
+      vat_amount: totals.vat,
       total_amount: totals.total,
       amount_paid: normalizeStatus(form.status) === "paid" ? totals.total : 0,
       notes: form.notes,
@@ -920,7 +920,7 @@ const Invoices = ({ push }) => {
                           fontWeight: 600,
                         }}
                       >
-                        {formatMoney(balance, item.currency || "INR")}
+                        {formatMoney(balance, item.currency || "GBP")}
                       </td>
 
                       <td style={{ padding: "13px 16px" }}>
@@ -1099,6 +1099,17 @@ const Invoices = ({ push }) => {
                   />
                 </Field>
 
+                <Field label="VAT Rate (%)">
+                  <input
+                    type="number"
+                    className="input"
+                    value={form.vat_rate}
+                    onChange={(event) =>
+                      handleFormChange("vat_rate", event.target.value)
+                    }
+                  />
+                </Field>
+
                 <Field label="Currency">
                   <select
                     className="input"
@@ -1107,25 +1118,11 @@ const Invoices = ({ push }) => {
                       handleFormChange("currency", event.target.value)
                     }
                   >
-                    <option value="INR">INR — ₹</option>
                     <option value="GBP">GBP — £</option>
                     <option value="USD">USD — $</option>
-                    <option value="EUR">EUR — €</option>
                   </select>
                 </Field>
 
-                <Field label="GST Rate (%)">
-                  <input
-                    className="input"
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={form.gst_rate}
-                    onChange={(event) =>
-                      handleFormChange("gst_rate", event.target.value)
-                    }
-                  />
-                </Field>
               </div>
 
               <div style={{ marginBottom: 18 }}>
@@ -1300,8 +1297,8 @@ const Invoices = ({ push }) => {
                       value={formatMoney(form.taxable_amount, form.currency)}
                     />
                     <SummaryRow
-                      label={`GST (${form.gst_rate}%)`}
-                      value={formatMoney(form.gst_amount, form.currency)}
+                      label={`VAT (${form.vat_rate}%)`}
+                      value={formatMoney(form.vat_amount, form.currency)}
                     />
 
                     <div

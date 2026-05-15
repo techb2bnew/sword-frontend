@@ -76,21 +76,21 @@ const generateMockData = () => {
       customer_id: 1,
       customer_name: "Metro Retail Store",
       order_number: "SO-2026-001",
-      created_at: getDate(60).toISOString(),
-      total_amount: 8500,
+      created_at: getDate(65).toISOString(),
+      total_amount: 85000,
       status: "delivered",
-      delivery_date: getDate(50).toISOString().split('T')[0],
-      items: [{ product: "Packaged Foods", qty: 100, price: 85 }]
+      delivery_date: getDate(60).toISOString().split('T')[0],
+      items: [{ product: "Packaged Foods", qty: 1000, price: 85 }]
     },
     {
       id: 2,
       customer_id: 2,
       customer_name: "City Supermarket",
       order_number: "SO-2026-002",
-      created_at: getDate(50).toISOString(),
-      total_amount: 12300,
+      created_at: getDate(55).toISOString(),
+      total_amount: 123000,
       status: "delivered",
-      delivery_date: getDate(42).toISOString().split('T')[0],
+      delivery_date: getDate(50).toISOString().split('T')[0],
       items: []
     },
     {
@@ -98,10 +98,10 @@ const generateMockData = () => {
       customer_id: 3,
       customer_name: "Express Mart",
       order_number: "SO-2026-003",
-      created_at: getDate(35).toISOString(),
-      total_amount: 6750,
+      created_at: getDate(40).toISOString(),
+      total_amount: 145000,
       status: "delivered",
-      delivery_date: getDate(28).toISOString().split('T')[0],
+      delivery_date: getDate(35).toISOString().split('T')[0],
       items: []
     },
     {
@@ -109,10 +109,10 @@ const generateMockData = () => {
       customer_id: 4,
       customer_name: "Regional Distribution Hub",
       order_number: "SO-2026-004",
-      created_at: getDate(25).toISOString(),
-      total_amount: 15600,
-      status: "dispatched",
-      delivery_date: getDate(5).toISOString().split('T')[0],
+      created_at: getDate(12).toISOString(),
+      total_amount: 156000,
+      status: "delivered",
+      delivery_date: getDate(10).toISOString().split('T')[0],
       items: []
     },
     {
@@ -120,10 +120,10 @@ const generateMockData = () => {
       customer_id: 5,
       customer_name: "Quick Shop Stores",
       order_number: "SO-2026-005",
-      created_at: getDate(15).toISOString(),
-      total_amount: 9800,
-      status: "dispatched",
-      delivery_date: getDate(3).toISOString().split('T')[0],
+      created_at: getDate(8).toISOString(),
+      total_amount: 258000,
+      status: "delivered",
+      delivery_date: getDate(5).toISOString().split('T')[0],
       items: []
     },
     {
@@ -131,10 +131,21 @@ const generateMockData = () => {
       customer_id: 1,
       customer_name: "Metro Retail Store",
       order_number: "SO-2026-006",
-      created_at: getDate(8).toISOString(),
-      total_amount: 11200,
-      status: "approved",
-      delivery_date: getDate(10).toISOString().split('T')[0],
+      created_at: getDate(3).toISOString(),
+      total_amount: 292000,
+      status: "delivered",
+      delivery_date: getDate(2).toISOString().split('T')[0],
+      items: []
+    },
+    {
+      id: 7,
+      customer_id: 2,
+      customer_name: "City Supermarket",
+      order_number: "SO-2026-007",
+      created_at: getDate(1).toISOString(),
+      total_amount: 285000,
+      status: "delivered",
+      delivery_date: getDate(0).toISOString().split('T')[0],
       items: []
     }
   ];
@@ -144,10 +155,10 @@ const generateMockData = () => {
     // Sales Revenue (Auto-generated)
     {
       id: 1000001,
-      date: getDate(50).toISOString().split('T')[0],
+      date: getDate(60).toISOString().split('T')[0],
       description: "Sales Revenue - SO-2026-001",
       type: "Credit",
-      amount: 8500,
+      amount: 85000,
       status: "Completed",
       category: "Sales Revenue",
       source: "auto",
@@ -155,10 +166,10 @@ const generateMockData = () => {
     },
     {
       id: 1000002,
-      date: getDate(42).toISOString().split('T')[0],
+      date: getDate(50).toISOString().split('T')[0],
       description: "Sales Revenue - SO-2026-002",
       type: "Credit",
-      amount: 12300,
+      amount: 123000,
       status: "Completed",
       category: "Sales Revenue",
       source: "auto",
@@ -166,14 +177,58 @@ const generateMockData = () => {
     },
     {
       id: 1000003,
-      date: getDate(28).toISOString().split('T')[0],
+      date: getDate(35).toISOString().split('T')[0],
       description: "Sales Revenue - SO-2026-003",
       type: "Credit",
-      amount: 6750,
+      amount: 145000,
       status: "Completed",
       category: "Sales Revenue",
       source: "auto",
       reference: "SO-2026-003"
+    },
+    {
+      id: 1000004,
+      date: getDate(12).toISOString().split('T')[0],
+      description: "Sales Revenue - SO-2026-004",
+      type: "Credit",
+      amount: 156000,
+      status: "Completed",
+      category: "Sales Revenue",
+      source: "auto",
+      reference: "SO-2026-004"
+    },
+    {
+      id: 1000005,
+      date: getDate(8).toISOString().split('T')[0],
+      description: "Sales Revenue - SO-2026-005",
+      type: "Credit",
+      amount: 258000,
+      status: "Completed",
+      category: "Sales Revenue",
+      source: "auto",
+      reference: "SO-2026-005"
+    },
+    {
+      id: 1000006,
+      date: getDate(3).toISOString().split('T')[0],
+      description: "Sales Revenue - SO-2026-006",
+      type: "Credit",
+      amount: 292000,
+      status: "Completed",
+      category: "Sales Revenue",
+      source: "auto",
+      reference: "SO-2026-006"
+    },
+    {
+      id: 1000007,
+      date: getDate(1).toISOString().split('T')[0],
+      description: "Sales Revenue - SO-2026-007",
+      type: "Credit",
+      amount: 285000,
+      status: "Completed",
+      category: "Sales Revenue",
+      source: "auto",
+      reference: "SO-2026-007"
     },
     // Purchase Costs (Auto-generated)
     {
@@ -211,8 +266,8 @@ const generateMockData = () => {
     },
     {
       id: 4,
-      date: getDate(48).toISOString().split('T')[0],
-      description: "Toll Charges - Highway Route",
+      date: getDate(6).toISOString().split('T')[0],
+      description: "Toll Charges - London Route",
       type: "Debit",
       amount: 1200,
       status: "Completed",
@@ -221,10 +276,10 @@ const generateMockData = () => {
     },
     {
       id: 5,
-      date: getDate(42).toISOString().split('T')[0],
-      description: "Vehicle Maintenance - Oil Change",
+      date: getDate(4).toISOString().split('T')[0],
+      description: "Fuel - Fleet Delivery",
       type: "Debit",
-      amount: 800,
+      amount: 8500,
       status: "Completed",
       category: "Transport Cost / Fuel",
       source: "manual"
@@ -240,11 +295,11 @@ const generateMockData = () => {
       source: "manual"
     },
     {
-      id: 7,
-      date: getDate(28).toISOString().split('T')[0],
+      id: 6,
+      date: getDate(4).toISOString().split('T')[0],
       description: "Toll Charges - Border Crossing",
       type: "Debit",
-      amount: 950,
+      amount: 1450,
       status: "Completed",
       category: "Transport Cost / Fuel",
       source: "manual"
@@ -262,7 +317,7 @@ const generateMockData = () => {
     },
     {
       id: 9,
-      date: getDate(30).toISOString().split('T')[0],
+      date: getDate(2).toISOString().split('T')[0],
       description: "Monthly Rent - Main Warehouse",
       type: "Debit",
       amount: 25000,
@@ -304,7 +359,7 @@ const generateMockData = () => {
     {
       id: 13,
       date: getDate(60).toISOString().split('T')[0],
-      description: "Salary - Rajesh Kumar",
+      description: "Salary - David Smith",
       type: "Debit",
       amount: 25000,
       status: "Completed",
@@ -314,7 +369,7 @@ const generateMockData = () => {
     {
       id: 14,
       date: getDate(60).toISOString().split('T')[0],
-      description: "Salary - Arun Singh",
+      description: "Salary - James Wilson",
       type: "Debit",
       amount: 22000,
       status: "Completed",
@@ -324,7 +379,7 @@ const generateMockData = () => {
     {
       id: 15,
       date: getDate(60).toISOString().split('T')[0],
-      description: "Salary - Priya Sharma",
+      description: "Salary - Sophie Evans",
       type: "Debit",
       amount: 28000,
       status: "Completed",
@@ -334,7 +389,7 @@ const generateMockData = () => {
     {
       id: 16,
       date: getDate(60).toISOString().split('T')[0],
-      description: "Salary - Vikram Patel",
+      description: "Salary - William Wright",
       type: "Debit",
       amount: 24000,
       status: "Completed",
@@ -344,7 +399,7 @@ const generateMockData = () => {
     {
       id: 17,
       date: getDate(30).toISOString().split('T')[0],
-      description: "Salary - Rajesh Kumar",
+      description: "Salary - David Smith",
       type: "Debit",
       amount: 25000,
       status: "Completed",
@@ -354,7 +409,7 @@ const generateMockData = () => {
     {
       id: 18,
       date: getDate(30).toISOString().split('T')[0],
-      description: "Salary - Arun Singh",
+      description: "Salary - James Wilson",
       type: "Debit",
       amount: 22000,
       status: "Completed",
@@ -364,7 +419,7 @@ const generateMockData = () => {
     {
       id: 19,
       date: getDate(30).toISOString().split('T')[0],
-      description: "Salary - Priya Sharma",
+      description: "Salary - Sophie Evans",
       type: "Debit",
       amount: 28000,
       status: "Completed",
@@ -374,7 +429,7 @@ const generateMockData = () => {
     {
       id: 20,
       date: getDate(30).toISOString().split('T')[0],
-      description: "Salary - Vikram Patel",
+      description: "Salary - William Wright",
       type: "Debit",
       amount: 24000,
       status: "Completed",

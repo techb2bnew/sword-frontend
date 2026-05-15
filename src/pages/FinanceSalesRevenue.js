@@ -31,9 +31,9 @@ export default function FinanceSalesRevenue({ push }) {
       });
 
       setStats({
-        totalRevenue: `£${totalRevenue.toLocaleString('en-IN')}`,
+        totalRevenue: `£${totalRevenue.toLocaleString('en-GB')}`,
         totalOrders: salesOrders.length,
-        averageOrder: `£${(totalRevenue / (deliveredCount || 1)).toLocaleString('en-IN')}`,
+        averageOrder: `£${(totalRevenue / (deliveredCount || 1)).toLocaleString('en-GB')}`,
         deliveredOrders: deliveredCount
       });
 
@@ -133,7 +133,7 @@ export default function FinanceSalesRevenue({ push }) {
                   <td style={{ fontWeight: 600 }}>{order.order_number}</td>
                   <td>{order.customer_name || 'N/A'}</td>
                   <td>{new Date(order.created_at).toLocaleDateString()}</td>
-                  <td style={{ fontWeight: 700 }}>£{parseFloat(order.total_amount || 0).toLocaleString('en-IN')}</td>
+                  <td style={{ fontWeight: 700 }}>£{parseFloat(order.total_amount || 0).toLocaleString('en-GB')}</td>
                   <td>
                     <span className={`pill ${order.status === 'delivered' ? 'green' : order.status === 'dispatched' ? 'blue' : 'yellow'}`}>
                       {order.status}

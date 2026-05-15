@@ -43,10 +43,10 @@ export default function FinanceWarehouseCosts({ push }) {
       const total = rent + utilities + maintenance;
 
       setStats({
-        totalCosts: `£${total.toLocaleString('en-IN')}`,
-        monthlyRent: `£${rent.toLocaleString('en-IN')}`,
-        utilities: `£${utilities.toLocaleString('en-IN')}`,
-        maintenance: `£${maintenance.toLocaleString('en-IN')}`
+        totalCosts: `£${total.toLocaleString('en-GB')}`,
+        monthlyRent: `£${rent.toLocaleString('en-GB')}`,
+        utilities: `£${utilities.toLocaleString('en-GB')}`,
+        maintenance: `£${maintenance.toLocaleString('en-GB')}`
       });
     } catch (err) {
       console.error('Error fetching warehouse costs:', err);
@@ -142,7 +142,7 @@ export default function FinanceWarehouseCosts({ push }) {
                   </td>
                   <td>{cost.description}</td>
                   <td>-</td>
-                  <td style={{ fontWeight: 700 }}>£{parseFloat(cost.amount).toLocaleString('en-IN')}</td>
+                  <td style={{ fontWeight: 700 }}>£{parseFloat(cost.amount).toLocaleString('en-GB')}</td>
                   <td>
                     <span className={`pill ${cost.status === 'Completed' ? 'green' : 'yellow'}`}>
                       {cost.status}

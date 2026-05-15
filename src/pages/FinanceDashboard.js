@@ -31,10 +31,10 @@ export default function FinanceDashboard({ push }) {
       const netProfit = cashOnHand;
 
       setStats({
-        cashOnHand: `£${cashOnHand.toLocaleString('en-IN')}`,
-        receivables: `£${pendingSales.toLocaleString('en-IN')}`,
-        payables: `£${(pendingPurchases).toLocaleString('en-IN')}`,
-        netProfit: `£${netProfit.toLocaleString('en-IN')}`
+        cashOnHand: `£${cashOnHand.toLocaleString('en-GB')}`,
+        receivables: `£${pendingSales.toLocaleString('en-GB')}`,
+        payables: `£${(pendingPurchases).toLocaleString('en-GB')}`,
+        netProfit: `£${netProfit.toLocaleString('en-GB')}`
       });
 
       // Process monthly data from ledger

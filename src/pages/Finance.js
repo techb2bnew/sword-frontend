@@ -38,10 +38,10 @@ export default function Finance({ push }) {
       const cashOnHand = completedSales - completedPurchases;
       
       setStats({
-        cashOnHand: `£${cashOnHand.toLocaleString('en-IN')}`,
-        receivables: `£${pendingSales.toLocaleString('en-IN')}`,
-        payables: `£${pendingPurchases.toLocaleString('en-IN')}`,
-        netProfit: `£${cashOnHand.toLocaleString('en-IN')}`
+        cashOnHand: `£${cashOnHand.toLocaleString('en-GB')}`,
+        receivables: `£${pendingSales.toLocaleString('en-GB')}`,
+        payables: `£${pendingPurchases.toLocaleString('en-GB')}`,
+        netProfit: `£${cashOnHand.toLocaleString('en-GB')}`
       });
 
       setLedger(ledgerEntries || []);
@@ -143,7 +143,7 @@ export default function Finance({ push }) {
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="month" />
               <YAxis />
-              <Tooltip formatter={(value) => [`£${value.toLocaleString()}`, '']} />
+              <Tooltip formatter={(value) => [`£${value.toLocaleString('en-GB')}`, '']} />
               <Bar dataKey="income" fill="#10b981" name="Income" />
               <Bar dataKey="expenses" fill="#ef4444" name="Expenses" />
             </BarChart>
@@ -172,7 +172,7 @@ export default function Finance({ push }) {
                     <Cell key={`cell-${index}`} fill={['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'][index % 5]} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value) => [`£${value.toLocaleString()}`, 'Amount']} />
+                <Tooltip formatter={(value) => [`£${value.toLocaleString('en-GB')}`, 'Amount']} />
               </PieChart>
             </ResponsiveContainer>
           </div>
@@ -191,7 +191,7 @@ export default function Finance({ push }) {
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <div style={{ fontWeight: 700, color: l.type === "Credit" ? "var(--accent-4)" : "var(--accent-5)" }}>
-                    {l.type === "Credit" ? "+" : "-"}£{parseFloat(l.amount).toLocaleString()}
+                    {l.type === "Credit" ? "+" : "-"}£{parseFloat(l.amount).toLocaleString('en-GB')}
                   </div>
                   <span className={`pill ${l.status === "Completed" ? "green" : "yellow"}`} style={{ fontSize: 10 }}>{l.status}</span>
                 </div>
@@ -231,7 +231,7 @@ export default function Finance({ push }) {
                     <div style={{ fontWeight: 700 }}>{l.description}</div>
                   </td>
                   <td style={{ color: l.type === "Credit" ? "var(--accent-4)" : "var(--accent-5)", fontWeight: 700 }}>{l.type.toUpperCase()}</td>
-                  <td style={{ fontWeight: 800, fontSize: 15 }}>£{parseFloat(l.amount).toLocaleString('en-IN')}</td>
+                  <td style={{ fontWeight: 800, fontSize: 15 }}>£{parseFloat(l.amount).toLocaleString('en-GB')}</td>
                   <td><span className={`pill ${l.status === "Completed" ? "green" : "yellow"}`}>{l.status}</span></td>
                   <td style={{ textAlign: 'right' }}>
                     {l.status === "Pending" && l.source === "manual" ? (
@@ -272,7 +272,7 @@ export default function Finance({ push }) {
               </select>
             </div>
 
-            <div className="form-group" style={{ gridColumn: 'span 2' }}><label>Description / Notes</label><input placeholder="e.g. Ramesh Monthly Salary" value={form.description} onChange={e => setForm({...form, description: e.target.value})} /></div>
+            <div className="form-group" style={{ gridColumn: 'span 2' }}><label>Description / Notes</label><input placeholder="e.g. David Monthly Salary" value={form.description} onChange={e => setForm({...form, description: e.target.value})} /></div>
             
             <div className="form-group"><label>Amount (£)</label><input type="number" placeholder="0.00" value={form.amount} onChange={e => setForm({...form, amount: e.target.value})} /></div>
             <div className="form-group">

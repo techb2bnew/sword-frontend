@@ -38,10 +38,10 @@ export default function FinanceTransportCosts({ push }) {
       const shipmentCount = costs.length;
 
       setStats({
-        totalCost: `£${totalCost.toLocaleString('en-IN')}`,
-        monthlyAvg: `£${(totalCost / 12).toLocaleString('en-IN')}`,
+        totalCost: `£${totalCost.toLocaleString('en-GB')}`,
+        monthlyAvg: `£${(totalCost / 12).toLocaleString('en-GB')}`,
         shipments: shipmentCount,
-        costPerShipment: `£${(shipmentCount > 0 ? totalCost / shipmentCount : 0).toLocaleString('en-IN')}`
+        costPerShipment: `£${(shipmentCount > 0 ? totalCost / shipmentCount : 0).toLocaleString('en-GB')}`
       });
     } catch (err) {
       console.error('Error fetching transport costs:', err);
@@ -133,7 +133,7 @@ export default function FinanceTransportCosts({ push }) {
                   <td>{new Date(cost.date).toLocaleDateString()}</td>
                   <td>{cost.description}</td>
                   <td>-</td>
-                  <td style={{ fontWeight: 700 }}>£{parseFloat(cost.amount).toLocaleString('en-IN')}</td>
+                  <td style={{ fontWeight: 700 }}>£{parseFloat(cost.amount).toLocaleString('en-GB')}</td>
                   <td>
                     <span className={`pill ${cost.status === 'Completed' ? 'green' : 'yellow'}`}>
                       {cost.status}

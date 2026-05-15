@@ -201,12 +201,12 @@ function DashboardTab({ assignments, notifications, unreadCount, activeAssignmen
   const handleSimulateAssignment = () => {
     actions.assignOrderToDispatcher({
       warehouse_id: 1,
-      warehouse_name: "Warehouse A",
-      warehouse_lat: 18.5089,
-      warehouse_lng: 73.9259,
-      delivery_address: "New Customer Site, Baner, Pune",
-      delivery_lat: 18.5597,
-      delivery_lng: 73.7799,
+      warehouse_name: "London Distribution Center",
+      warehouse_lat: 51.5284,
+      warehouse_lng: -0.2662,
+      delivery_address: "New Customer Site, Oxford Street, London",
+      delivery_lat: 51.5145,
+      delivery_lng: -0.1444,
       total_distance_km: 15.2,
       items: [
         { product_id: 1001, product_name: "Red Chilli Powder", quantity: 50, unit: "kg", bin_id: 1, rack_code: "R-B1", bin_code: "B-201", bin_location: "R-B1/B-201", barcode: "SKU-CHILLI-RED" },
@@ -731,7 +731,7 @@ function DispatchCenterTab({ assignments, push }) {
              <div>Destination: <strong>{selected.delivery_address}</strong></div>
              <div>Items: <strong>{selected.items.length} units</strong></div>
           </div>
-          <button onClick={() => { actions.assignDriverAfterScan(selected.id, { driver_name: "Suresh Patil", vehicle_number: "MH-12-PQ-9876" }); setSelected(null); setInput(""); push("Driver Assigned Successfully!"); }} style={{ width: "100%", padding: 16, background: "#1e293b", color: "white", borderRadius: 10, border: "none", fontWeight: 800, cursor: "pointer" }}>🚀 Confirm Dispatch</button>
+          <button onClick={() => { actions.assignDriverAfterScan(selected.id, { driver_name: "David Smith", vehicle_number: "BV62 XYZ" }); setSelected(null); setInput(""); push("Driver Assigned Successfully!"); }} style={{ width: "100%", padding: 16, background: "#1e293b", color: "white", borderRadius: 10, border: "none", fontWeight: 800, cursor: "pointer" }}>🚀 Confirm Dispatch</button>
         </div>
       )}
     </div>

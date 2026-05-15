@@ -22,9 +22,9 @@ export default function FinancePurchaseOrders({ push }) {
         .reduce((sum, po) => sum + (parseFloat(po.total_amount) || 0), 0);
 
       setStats({
-        total: `£${totalAmount.toLocaleString('en-IN')}`,
-        pending: `£${pendingAmount.toLocaleString('en-IN')}`,
-        received: `£${receivedAmount.toLocaleString('en-IN')}`,
+        total: `£${totalAmount.toLocaleString('en-GB')}`,
+        pending: `£${pendingAmount.toLocaleString('en-GB')}`,
+        received: `£${receivedAmount.toLocaleString('en-GB')}`,
         count: purchaseOrders.length
       });
     } catch (err) {
@@ -115,7 +115,7 @@ export default function FinancePurchaseOrders({ push }) {
                   <td>{po.supplier_name || 'N/A'}</td>
                   <td>{new Date(po.order_date).toLocaleDateString()}</td>
                   <td>{po.expected_delivery ? new Date(po.expected_delivery).toLocaleDateString() : '-'}</td>
-                  <td style={{ fontWeight: 700 }}>£{parseFloat(po.total_amount).toLocaleString('en-IN')}</td>
+                  <td style={{ fontWeight: 700 }}>£{parseFloat(po.total_amount).toLocaleString('en-GB')}</td>
                   <td>
                     <span className={`pill ${
                       po.status === 'Received' ? 'green' :

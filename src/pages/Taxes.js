@@ -8,65 +8,65 @@ const DUMMY_TAX_PERIODS = [
     period: "Jan 2026",
     sales: 185000,
     purchases: 92000,
-    output_gst: 33300,
-    input_gst: 16560,
+    output_vat: 33300,
+    input_vat: 16560,
     net_tax: 16740,
     status: "Filed",
     due_date: "2026-02-20",
     filed_date: "2026-02-17",
-    return_type: "GSTR-3B",
+    return_type: "VAT100",
   },
   {
     id: 2,
     period: "Feb 2026",
     sales: 210000,
     purchases: 108000,
-    output_gst: 37800,
-    input_gst: 19440,
+    output_vat: 37800,
+    input_vat: 19440,
     net_tax: 18360,
     status: "Filed",
     due_date: "2026-03-20",
     filed_date: "2026-03-19",
-    return_type: "GSTR-3B",
+    return_type: "VAT100",
   },
   {
     id: 3,
     period: "Mar 2026",
     sales: 175000,
     purchases: 88000,
-    output_gst: 31500,
-    input_gst: 15840,
+    output_vat: 31500,
+    input_vat: 15840,
     net_tax: 15660,
     status: "Filed",
     due_date: "2026-04-20",
     filed_date: "2026-04-18",
-    return_type: "GSTR-3B",
+    return_type: "VAT100",
   },
   {
     id: 4,
     period: "Apr 2026",
     sales: 260000,
     purchases: 134000,
-    output_gst: 46800,
-    input_gst: 24120,
+    output_vat: 46800,
+    input_vat: 24120,
     net_tax: 22680,
     status: "Pending",
     due_date: "2026-05-20",
     filed_date: "",
-    return_type: "GSTR-3B",
+    return_type: "VAT100",
   },
   {
     id: 5,
     period: "May 2026",
     sales: 312000,
     purchases: 158000,
-    output_gst: 56160,
-    input_gst: 28440,
+    output_vat: 56160,
+    input_vat: 28440,
     net_tax: 27720,
     status: "Not Filed",
     due_date: "2026-06-20",
     filed_date: "",
-    return_type: "GSTR-3B",
+    return_type: "VAT100",
   },
 ];
 
@@ -110,17 +110,17 @@ const DUMMY_DOCUMENTS = [
 
 const DUMMY_TAX_CATEGORIES = [
   {
-    label: "Output GST",
+    label: "Output VAT",
     value: 205560,
     color: "#2563eb",
   },
   {
-    label: "Input GST",
+    label: "Input VAT",
     value: 104400,
     color: "#22c55e",
   },
   {
-    label: "Net GST Payable",
+    label: "Net VAT Payable",
     value: 101160,
     color: "#f59e0b",
   },
@@ -130,7 +130,7 @@ const DUMMY_TAX_CATEGORIES = [
 
 const todayISO = () => new Date().toISOString().split("T")[0];
 
-const formatMoney = (value, currency = "EUR") => {
+const formatMoney = (value, currency = "GBP") => {
   const amount = Number(value || 0);
 
   const symbolMap = {
@@ -144,7 +144,7 @@ const formatMoney = (value, currency = "EUR") => {
 
   if (!Number.isFinite(amount)) return `${symbol}0`;
 
-  return `${symbol}${amount.toLocaleString("en-IN", {
+  return `${symbol}${amount.toLocaleString("en-GB", {
     maximumFractionDigits: 0,
   })}`;
 };
@@ -156,7 +156,7 @@ const normalizeStatus = (status = "") => {
 const formatDate = (date) => {
   if (!date) return "—";
 
-  return new Date(date).toLocaleDateString("en-IN", {
+  return new Date(date).toLocaleDateString("en-GB", {
     day: "2-digit",
     month: "short",
     year: "numeric",
@@ -464,7 +464,7 @@ const TaxBarChart = ({ data }) => {
 
 const MonthlyTaxChart = ({ data }) => {
   const maxValue = Math.max(
-    ...data.map((item) => Math.max(item.output_gst, item.input_gst, item.net_tax)),
+    ...data.map((item) => Math.max(item.output_vat, item.input_vat, item.net_tax)),
     1
   );
 
@@ -480,8 +480,8 @@ const MonthlyTaxChart = ({ data }) => {
       }}
     >
       {data.map((item) => {
-        const outputHeight = Math.max((item.output_gst / maxValue) * 100, 2);
-        const inputHeight = Math.max((item.input_gst / maxValue) * 100, 2);
+        const outputHeight = Math.max((item.output_vat / maxValue) * 100, 2);
+        const inputHeight = Math.max((item.input_vat / maxValue) * 100, 2);
         const netHeight = Math.max((item.net_tax / maxValue) * 100, 2);
 
         return (
@@ -507,7 +507,7 @@ const MonthlyTaxChart = ({ data }) => {
               }}
             >
               <div
-                title={`Output GST: ${formatMoney(item.output_gst)}`}
+                title={`Output VAT: ${formatMoney(item.output_vat)}`}
                 style={{
                   width: 13,
                   height: `${outputHeight}%`,
@@ -517,7 +517,7 @@ const MonthlyTaxChart = ({ data }) => {
               />
 
               <div
-                title={`Input GST: ${formatMoney(item.input_gst)}`}
+                title={`Input VAT: ${formatMoney(item.input_vat)}`}
                 style={{
                   width: 13,
                   height: `${inputHeight}%`,
@@ -561,13 +561,13 @@ const Taxes = ({ push }) => {
   const [documents, setDocuments] = useState(DUMMY_DOCUMENTS);
 
   const [filterStatus, setFilterStatus] = useState("all");
-  const [taxType, setTaxType] = useState("gst");
+  const [taxType, setTaxType] = useState("vat");
   const [period, setPeriod] = useState("all");
 
   const [showModal, setShowModal] = useState(false);
 
   const [filingForm, setFilingForm] = useState({
-    return_type: "GSTR-3B",
+    return_type: "VAT100",
     tax_period_id: "",
     filing_date: todayISO(),
     payment_reference: "",
@@ -595,12 +595,12 @@ const Taxes = ({ push }) => {
       return sum + Number(item.purchases || 0);
     }, 0);
 
-    const outputGst = taxPeriods.reduce((sum, item) => {
-      return sum + Number(item.output_gst || 0);
+    const outputVat = taxPeriods.reduce((sum, item) => {
+      return sum + Number(item.output_vat || 0);
     }, 0);
 
-    const inputGst = taxPeriods.reduce((sum, item) => {
-      return sum + Number(item.input_gst || 0);
+    const inputVat = taxPeriods.reduce((sum, item) => {
+      return sum + Number(item.input_vat || 0);
     }, 0);
 
     const netTax = taxPeriods.reduce((sum, item) => {
@@ -620,8 +620,8 @@ const Taxes = ({ push }) => {
     return {
       totalSales,
       totalPurchases,
-      outputGst,
-      inputGst,
+      outputVat,
+      inputVat,
       netTax,
       pendingTax,
       filedReturns,
@@ -760,7 +760,7 @@ const Taxes = ({ push }) => {
               color: "#6b7280",
             }}
           >
-            Manage GST filing, tax liability, compliance status, and tax documents.
+            Manage VAT filing, tax liability, compliance status, and tax documents.
           </p>
         </div>
 
@@ -843,7 +843,7 @@ const Taxes = ({ push }) => {
               onChange={(event) => setTaxType(event.target.value)}
               style={{ minWidth: 180 }}
             >
-              <option value="gst">GST</option>
+              <option value="vat">VAT</option>
               <option value="tds">TDS</option>
               <option value="income_tax">Income Tax</option>
             </select>
@@ -891,26 +891,26 @@ const Taxes = ({ push }) => {
       >
         <StatCard
           icon="📤"
-          label="Output GST"
-          value={formatMoney(analytics.outputGst)}
+          label="Output VAT"
+          value={formatMoney(analytics.outputVat)}
           accent="#2563eb"
           description="Tax collected on sales"
         />
 
         <StatCard
           icon="📥"
-          label="Input GST"
-          value={formatMoney(analytics.inputGst)}
+          label="Input VAT"
+          value={formatMoney(analytics.inputVat)}
           accent="#22c55e"
           description="Tax paid on purchases"
         />
 
         <StatCard
           icon="🧾"
-          label="Net Tax Payable"
+          label="Net VAT Payable"
           value={formatMoney(analytics.netTax)}
           accent="#f59e0b"
-          description="Output GST minus input GST"
+          description="Output VAT minus input VAT"
         />
 
         <StatCard
@@ -958,7 +958,7 @@ const Taxes = ({ push }) => {
                   color: "#111827",
                 }}
               >
-                Monthly GST Overview
+                Monthly VAT Overview
               </h3>
 
               <p
@@ -968,7 +968,7 @@ const Taxes = ({ push }) => {
                   color: "#6b7280",
                 }}
               >
-                Output GST, input GST and net tax payable
+                Output VAT, input VAT and net tax payable
               </p>
             </div>
 
@@ -1600,13 +1600,13 @@ const Taxes = ({ push }) => {
                   <SummaryRow label="Period" value={selectedTaxPeriod.period} />
 
                   <SummaryRow
-                    label="Output GST"
-                    value={formatMoney(selectedTaxPeriod.output_gst)}
+                    label="Output VAT"
+                    value={formatMoney(selectedTaxPeriod.output_vat)}
                   />
 
                   <SummaryRow
-                    label="Input GST"
-                    value={formatMoney(selectedTaxPeriod.input_gst)}
+                    label="Input VAT"
+                    value={formatMoney(selectedTaxPeriod.input_vat)}
                   />
 
                   <SummaryRow

@@ -10,76 +10,76 @@ const DUMMY_INVOICES = [
   {
     id: 1001,
     type: "invoice",
-    counterparty_name: "Amit Sharma",
+    counterparty_name: "James Smith",
     counterparty_id: "CUST-001",
     issue_date: "2026-05-01",
     due_date: "2026-05-15",
     status: "Sent",
-    currency: "EUR",
-    gst_rate: 18,
+    currency: "GBP",
+    vat_rate: 20,
     taxable_amount: 25000,
-    gst_amount: 4500,
-    total_amount: 29500,
+    vat_amount: 5000,
+    total_amount: 30000,
     amount_paid: 0,
   },
   {
     id: 1002,
     type: "invoice",
-    counterparty_name: "Rahul Enterprises",
+    counterparty_name: "Global Retail Mart",
     counterparty_id: "CUST-002",
     issue_date: "2026-04-20",
     due_date: "2026-05-20",
     status: "Partially Paid",
-    currency: "EUR",
-    gst_rate: 18,
+    currency: "GBP",
+    vat_rate: 20,
     taxable_amount: 50000,
-    gst_amount: 9000,
-    total_amount: 59000,
+    vat_amount: 10000,
+    total_amount: 60000,
     amount_paid: 30000,
   },
   {
     id: 1003,
     type: "invoice",
-    counterparty_name: "Base2Brand Client",
+    counterparty_name: "Metro Logistics Group",
     counterparty_id: "CUST-003",
     issue_date: "2026-04-01",
     due_date: "2026-04-10",
     status: "Paid",
-    currency: "EUR",
-    gst_rate: 18,
+    currency: "GBP",
+    vat_rate: 20,
     taxable_amount: 15000,
-    gst_amount: 2700,
-    total_amount: 17700,
-    amount_paid: 17700,
+    vat_amount: 3000,
+    total_amount: 18000,
+    amount_paid: 18000,
   },
   {
     id: 2001,
     type: "bill",
-    counterparty_name: "Hosting Provider",
+    counterparty_name: "Cloud Hosting UK",
     counterparty_id: "VEND-001",
     issue_date: "2026-05-01",
     due_date: "2026-05-12",
     status: "Draft",
-    currency: "EUR",
-    gst_rate: 18,
+    currency: "GBP",
+    vat_rate: 20,
     taxable_amount: 6000,
-    gst_amount: 1080,
-    total_amount: 7080,
+    vat_amount: 1200,
+    total_amount: 7200,
     amount_paid: 0,
   },
   {
     id: 2002,
     type: "bill",
-    counterparty_name: "Software Vendor",
+    counterparty_name: "Software Solutions Ltd",
     counterparty_id: "VEND-002",
     issue_date: "2026-05-03",
     due_date: "2026-05-18",
     status: "Partially Paid",
-    currency: "EUR",
-    gst_rate: 18,
+    currency: "GBP",
+    vat_rate: 20,
     taxable_amount: 12000,
-    gst_amount: 2160,
-    total_amount: 14160,
+    vat_amount: 2400,
+    total_amount: 14400,
     amount_paid: 5000,
   },
 ];
@@ -89,39 +89,39 @@ const DUMMY_PAYMENTS = [
     id: 501,
     invoice_id: 1002,
     invoice_type: "invoice",
-    counterparty_name: "Rahul Enterprises",
+    counterparty_name: "Global Retail Mart",
     payment_date: "2026-05-05",
     method: "Bank Transfer",
     amount: 30000,
-    currency: "EUR",
+    currency: "GBP",
     status: "Completed",
-    reference_id: "TXN-RAHUL-001",
+    reference_id: "TXN-GLOBAL-001",
     notes: "Partial payment received.",
   },
   {
     id: 502,
     invoice_id: 1003,
     invoice_type: "invoice",
-    counterparty_name: "Base2Brand Client",
+    counterparty_name: "Metro Logistics Group",
     payment_date: "2026-04-08",
-    method: "UPI",
-    amount: 17700,
-    currency: "EUR",
+    method: "Bank Transfer",
+    amount: 18000,
+    currency: "GBP",
     status: "Completed",
-    reference_id: "UPI-B2B-003",
+    reference_id: "TXN-METRO-003",
     notes: "Full payment received.",
   },
   {
     id: 503,
     invoice_id: 2002,
     invoice_type: "bill",
-    counterparty_name: "Software Vendor",
+    counterparty_name: "Software Solutions Ltd",
     payment_date: "2026-05-06",
     method: "Bank Transfer",
     amount: 5000,
-    currency: "EUR",
+    currency: "GBP",
     status: "Completed",
-    reference_id: "BILL-SW-002",
+    reference_id: "BILL-SOFT-002",
     notes: "Partial bill payment.",
   },
 ];
@@ -130,7 +130,7 @@ const DUMMY_PAYMENTS = [
 
 const todayISO = () => new Date().toISOString().split("T")[0];
 
-const formatMoney = (value, currency = "INR") => {
+const formatMoney = (value, currency = "GBP") => {
   const amount = Number(value || 0);
 
   const symbolMap = {
@@ -144,7 +144,7 @@ const formatMoney = (value, currency = "INR") => {
 
   if (!Number.isFinite(amount)) return `${symbol}0`;
 
-  return `${symbol}${amount.toLocaleString("en-IN", {
+  return `${symbol}${amount.toLocaleString("en-GB", {
     maximumFractionDigits: 2,
   })}`;
 };
@@ -439,7 +439,7 @@ const Payments = ({ push }) => {
       return sum + getInvoiceBalance(invoice);
     }, 0);
 
-    const currency = payments[0]?.currency || invoices[0]?.currency || "INR";
+    const currency = payments[0]?.currency || invoices[0]?.currency || "GBP";
 
     return {
       totalPayments,
@@ -460,7 +460,7 @@ const Payments = ({ push }) => {
           id: String(invoice.id),
           label: `${invoice.type === "bill" ? "BILL" : "INV"}-${invoice.id} • ${
             invoice.counterparty_name || "N/A"
-          } • Balance ${formatMoney(balance, invoice.currency || "INR")}`,
+          } • Balance ${formatMoney(balance, invoice.currency || "GBP")}`,
           type: invoice.type,
         };
       });
@@ -529,7 +529,7 @@ const Payments = ({ push }) => {
       payment_date: form.payment_date,
       method: form.method,
       amount: amountNum,
-      currency: selected.currency || "INR",
+      currency: selected.currency || "GBP",
       status: form.status,
       reference_id: form.reference_id,
       notes: form.notes,
@@ -953,7 +953,7 @@ const Payments = ({ push }) => {
                         whiteSpace: "nowrap",
                       }}
                     >
-                      {formatMoney(payment.amount, payment.currency || "INR")}
+                      {formatMoney(payment.amount, payment.currency || "GBP")}
                     </td>
 
                     <td style={{ padding: "13px 16px" }}>
@@ -1187,7 +1187,7 @@ const Payments = ({ push }) => {
                       <strong>
                         {formatMoney(
                           remainingAmount,
-                          selectedInvoice.currency || "INR"
+                          selectedInvoice.currency || "GBP"
                         )}
                       </strong>
                     </div>
@@ -1487,7 +1487,7 @@ const Payments = ({ push }) => {
 
                 <SummaryRow
                   label="Amount"
-                  value={formatMoney(viewPayment.amount, viewPayment.currency || "INR")}
+                  value={formatMoney(viewPayment.amount, viewPayment.currency || "GBP")}
                   strong
                 />
 

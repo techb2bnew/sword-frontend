@@ -37,10 +37,10 @@ export default function FinancePayroll({ push }) {
       const uniqueEmployees = new Set(payroll.map(p => p.description)).size;
 
       setStats({
-        totalPayroll: `£${totalPayroll.toLocaleString('en-IN')}`,
-        monthlyPayroll: `£${(totalPayroll / 12).toLocaleString('en-IN')}`,
+        totalPayroll: `£${totalPayroll.toLocaleString('en-GB')}`,
+        monthlyPayroll: `£${(totalPayroll / 12).toLocaleString('en-GB')}`,
         employeeCount: uniqueEmployees,
-        avgSalary: `£${(uniqueEmployees > 0 ? totalPayroll / uniqueEmployees : 0).toLocaleString('en-IN')}`
+        avgSalary: `£${(uniqueEmployees > 0 ? totalPayroll / uniqueEmployees : 0).toLocaleString('en-GB')}`
       });
     } catch (err) {
       console.error('Error fetching payroll data:', err);
@@ -136,7 +136,7 @@ export default function FinancePayroll({ push }) {
                   <td>{new Date(record.date).toLocaleDateString()}</td>
                   <td style={{ fontWeight: 600 }}>{record.description.replace('Salary - ', '')}</td>
                   <td>-</td>
-                  <td style={{ fontWeight: 700 }}>£{parseFloat(record.amount).toLocaleString('en-IN')}</td>
+                  <td style={{ fontWeight: 700 }}>£{parseFloat(record.amount).toLocaleString('en-GB')}</td>
                   <td>Monthly</td>
                   <td>
                     <span className={`pill ${record.status === 'Completed' ? 'green' : 'yellow'}`}>

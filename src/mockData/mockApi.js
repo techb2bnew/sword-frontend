@@ -71,7 +71,7 @@ export async function mockRequest(method, url, bodyOrConfig, maybeConfig) {
       userId = 5;
     } else if (email === "driver@sword.com") {
       role = "driver";
-      username = "Rajesh Kumar";
+      username = "David Smith";
       userId = 10;
     } else if (email === "dispatcher@sword.com") {
       role = "dispatcher";

@@ -4,7 +4,7 @@ import { API } from "../config";
 
 /* ─────────────────────────── helpers ─────────────────────────── */
 
-const formatMoney = (value, currency = "INR") => {
+const formatMoney = (value, currency = "GBP") => {
   const amount = Number(value || 0);
 
   const symbolMap = {
@@ -16,7 +16,7 @@ const formatMoney = (value, currency = "INR") => {
 
   const symbol = symbolMap[currency] || `${currency} `;
 
-  return `${symbol}${amount.toLocaleString("en-IN", {
+  return `${symbol}${amount.toLocaleString("en-GB", {
     maximumFractionDigits: 0,
   })}`;
 };
@@ -447,7 +447,7 @@ const ProfitLineChart = ({ data }) => {
 const Reports = ({ push }) => {
   const [reportType, setReportType] = useState("overview");
   const [period, setPeriod] = useState("last_6_months");
-  const [currency, setCurrency] = useState("EUR");
+  const [currency, setCurrency] = useState("GBP");
   
   const [rawData, setRawData] = useState({
     monthlyTrend: [],
@@ -679,10 +679,8 @@ const Reports = ({ push }) => {
               onChange={(event) => setCurrency(event.target.value)}
               style={{ minWidth: 160 }}
             >
-              <option value="INR">INR — ₹</option>
               <option value="GBP">GBP — £</option>
               <option value="USD">USD — $</option>
-              <option value="EUR">EUR — €</option>
             </select>
           </Field>
         </div>
