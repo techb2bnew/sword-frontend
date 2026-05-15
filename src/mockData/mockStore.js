@@ -14,11 +14,83 @@ const seedState = () => {
 
   // Suppliers (used by buyer quotation modules)
   const suppliers = [
-    { id: 1, name: "Agro Fresh Pvt Ltd", company_name: "Agro Fresh Pvt Ltd", contact: "Ramesh Sharma", rating: 4.5 },
-    { id: 2, name: "Krishna Spices & Co", company_name: "Krishna Spices & Co", contact: "Sunil Verma", rating: 4.2 },
-    { id: 3, name: "National Packaging Solutions", company_name: "National Packaging Solutions", contact: "Priya Mehta", rating: 3.8 },
-    { id: 4, name: "Bulk Trading Enterprises", company_name: "Bulk Trading Enterprises", contact: "—", rating: 4.0 },
-    { id: 5, name: "Global Imports Ltd", company_name: "Global Imports Ltd", contact: "—", rating: 3.9 },
+    { id: 1, name: "Agro Fresh Pvt Ltd", company_name: "Agro Fresh Pvt Ltd", contact: "Ramesh Sharma", contact_person: "Ramesh Sharma", email: "ramesh@agrofresh.in", phone: "+91-9821001001", address: "Plot 12, MIDC Hadapsar, Pune", rating: 4.5 },
+    { id: 2, name: "Krishna Spices & Co", company_name: "Krishna Spices & Co", contact: "Sunil Verma", contact_person: "Sunil Verma", email: "sunil@krishnaspices.in", phone: "+91-9821002002", address: "45 Spice Market Lane, Nagpur", rating: 4.2 },
+    { id: 3, name: "National Packaging Solutions", company_name: "National Packaging Solutions", contact: "Priya Mehta", contact_person: "Priya Mehta", email: "priya@natpack.in", phone: "+91-9821003003", address: "78 Industrial Area, Thane", rating: 3.8 },
+    { id: 4, name: "Bulk Trading Enterprises", company_name: "Bulk Trading Enterprises", contact: "Anil Gupta", contact_person: "Anil Gupta", email: "anil@bulktrading.in", phone: "+91-9821004004", address: "101 APMC Yard, Navi Mumbai", rating: 4.0 },
+    { id: 5, name: "Global Imports Ltd", company_name: "Global Imports Ltd", contact: "Sara Khan", contact_person: "Sara Khan", email: "sara@globalimports.in", phone: "+91-9821005005", address: "22 Export Zone, Nhava Sheva", rating: 3.9 },
+  ];
+
+  // Customers (used by admin CustomerManagement + CustomerOrders)
+  const customers = [
+    { id: 1, customer_name: "Rajesh Mehta", company_name: "Metro Retail Store", email: "rajesh@metroretail.in", phone: "+91-9900110011", address_line_1: "12 MG Road", address_line_2: "", country: "India", state: "Maharashtra", city: "Pune", pincode: "411001", latitude: 18.5204, longitude: 73.8567, delivery_priority: "normal", status: "active" },
+    { id: 2, customer_name: "Anita Sharma", company_name: "City Supermarket", email: "anita@citysupermarket.in", phone: "+91-9900220022", address_line_1: "56 Andheri West", address_line_2: "", country: "India", state: "Maharashtra", city: "Mumbai", pincode: "400058", latitude: 19.1365, longitude: 72.8296, delivery_priority: "urgent", status: "active" },
+    { id: 3, customer_name: "Vijay Patil", company_name: "FreshMart Kothrud", email: "vijay@freshmart.in", phone: "+91-9900330033", address_line_1: "Paud Road, Kothrud", address_line_2: "", country: "India", state: "Maharashtra", city: "Pune", pincode: "411038", latitude: 18.5074, longitude: 73.8077, delivery_priority: "scheduled", status: "active" },
+    { id: 4, customer_name: "Sunita Rao", company_name: "Regional Distribution Hub", email: "sunita@rdh.in", phone: "+91-9900440044", address_line_1: "NH48 Logistics Park", address_line_2: "Gate 3", country: "India", state: "Maharashtra", city: "Nashik", pincode: "422001", latitude: 19.9975, longitude: 73.7898, delivery_priority: "normal", status: "active" },
+    { id: 5, customer_name: "Deepak Joshi", company_name: "Quick Shop Stores", email: "deepak@quickshop.in", phone: "+91-9900550055", address_line_1: "Plot 7, Wagle Estate", address_line_2: "", country: "India", state: "Maharashtra", city: "Thane", pincode: "400604", latitude: 19.1663, longitude: 72.9976, delivery_priority: "urgent", status: "inactive" },
+  ];
+
+  // Customer Orders (admin Logistics & Order Management)
+  const customerOrders = [
+    { id: 1, order_number: "ORD-2026-001", customer_id: 1, customer_name: "Rajesh Mehta", company_name: "Metro Retail Store", required_delivery_date: isoDate(getDate(-5)), delivery_address: "12 MG Road, Pune", delivery_city: "Pune", delivery_state: "MH", delivery_country: "IN", delivery_latitude: 18.5204, delivery_longitude: 73.8567, delivery_priority: "normal", status: "delivered", selected_warehouse_name: "Warehouse A", warehouse_distance_km: 11.8, driver_name: "Rajesh Kumar", vehicle_type: "Truck", vehicle_plate: "MH-12-AB-1234", delivery_sequence: 1, items: [{ product_id: 1001, product_name: "Wheat Flour (Atta)", quantity: 200, weight_kg: 200 }] },
+    { id: 2, order_number: "ORD-2026-002", customer_id: 2, customer_name: "Anita Sharma", company_name: "City Supermarket", required_delivery_date: isoDate(getDate(-3)), delivery_address: "56 Andheri West, Mumbai", delivery_city: "Mumbai", delivery_state: "MH", delivery_country: "IN", delivery_latitude: 19.1365, delivery_longitude: 72.8296, delivery_priority: "urgent", status: "dispatched", selected_warehouse_name: "Warehouse B", warehouse_distance_km: 16.3, driver_name: "Rajesh Kumar", vehicle_type: "Truck", vehicle_plate: "MH-12-AB-1234", delivery_sequence: 2, items: [{ product_id: 2001, product_name: "Red Chilli Powder", quantity: 50, weight_kg: 50 }] },
+    { id: 3, order_number: "ORD-2026-003", customer_id: 3, customer_name: "Vijay Patil", company_name: "FreshMart Kothrud", required_delivery_date: isoDate(getDate(-1)), delivery_address: "Paud Road, Kothrud, Pune", delivery_city: "Pune", delivery_state: "MH", delivery_country: "IN", delivery_latitude: 18.5074, delivery_longitude: 73.8077, delivery_priority: "scheduled", status: "approved", selected_warehouse_name: "Warehouse A", warehouse_distance_km: 7.6, driver_name: "Suresh Patil", vehicle_type: "Van", vehicle_plate: "MH-14-XY-9876", delivery_sequence: null, items: [{ product_id: 1101, product_name: "Rice (Basmati)", quantity: 100, weight_kg: 100 }] },
+    { id: 4, order_number: "ORD-2026-004", customer_id: 4, customer_name: "Sunita Rao", company_name: "Regional Distribution Hub", required_delivery_date: isoDate(getDate(2)), delivery_address: "NH48 Logistics Park, Nashik", delivery_city: "Nashik", delivery_state: "MH", delivery_country: "IN", delivery_latitude: 19.9975, delivery_longitude: 73.7898, delivery_priority: "normal", status: "pending", selected_warehouse_name: null, warehouse_distance_km: null, driver_name: null, vehicle_type: null, vehicle_plate: null, delivery_sequence: null, items: [{ product_id: 2101, product_name: "Turmeric Powder", quantity: 80, weight_kg: 80 }] },
+    { id: 5, order_number: "ORD-2026-005", customer_id: 5, customer_name: "Deepak Joshi", company_name: "Quick Shop Stores", required_delivery_date: isoDate(getDate(4)), delivery_address: "Plot 7, Wagle Estate, Thane", delivery_city: "Thane", delivery_state: "MH", delivery_country: "IN", delivery_latitude: 19.1663, delivery_longitude: 72.9976, delivery_priority: "urgent", status: "pending", selected_warehouse_name: null, warehouse_distance_km: null, driver_name: null, vehicle_type: null, vehicle_plate: null, delivery_sequence: null, items: [{ product_id: 3001, product_name: "BOPP Bags (25kg)", quantity: 500, weight_kg: 500 }] },
+  ];
+
+  // Transport: Vehicles & Shipments
+  const transportVehicles = [
+    { id: 1, vehicle_number: "MH-12-AB-1234", vehicle_type: "Truck", capacity_kg: 5000, capacity_volume: 50, driver_name: "Rajesh Kumar", driver_phone: "+91-9811001100", assigned_warehouse_id: 1, warehouse_name: "Warehouse A", current_latitude: 18.5089, current_longitude: 73.9259, status: "assigned" },
+    { id: 2, vehicle_number: "MH-14-XY-9876", vehicle_type: "Van", capacity_kg: 2000, capacity_volume: 20, driver_name: "Suresh Patil", driver_phone: "+91-9811002200", assigned_warehouse_id: 2, warehouse_name: "Warehouse B", current_latitude: 19.2295, current_longitude: 72.8532, status: "available" },
+    { id: 3, vehicle_number: "MH-09-CD-5566", vehicle_type: "Tempo", capacity_kg: 1000, capacity_volume: 10, driver_name: "Arun Singh", driver_phone: "+91-9811003300", assigned_warehouse_id: 1, warehouse_name: "Warehouse A", current_latitude: 18.5089, current_longitude: 73.9259, status: "maintenance" },
+    { id: 4, vehicle_number: "GJ-01-EF-7788", vehicle_type: "Lorry", capacity_kg: 10000, capacity_volume: 100, driver_name: "Vikram Desai", driver_phone: "+91-9811004400", assigned_warehouse_id: null, warehouse_name: null, current_latitude: 23.0225, current_longitude: 72.5714, status: "available" },
+  ];
+
+  const transportShipments = [
+    { id: 1, vehicle_id: 1, vehicle_number: "MH-12-AB-1234", driver_name: "Rajesh Kumar", driver_phone: "+91-9811001100", origin_id: 1, origin_name: "Warehouse A", origin_lat: 18.5089, origin_lng: 73.9259, dest_name: "Metro Retail Store, MG Road, Pune", dest_lat: 18.5204, dest_lng: 73.8567, distance_km: 11.8, customer_order_id: 1, order_number: "ORD-2026-001", status: "Delivered", dispatched_at: isoDate(getDate(6)), delivered_at: isoDate(getDate(5)) },
+    { id: 2, vehicle_id: 1, vehicle_number: "MH-12-AB-1234", driver_name: "Rajesh Kumar", driver_phone: "+91-9811001100", origin_id: 2, origin_name: "Warehouse B", origin_lat: 19.2295, origin_lng: 72.8532, dest_name: "City Supermarket, Andheri West, Mumbai", dest_lat: 19.1365, dest_lng: 72.8296, distance_km: 16.3, customer_order_id: 2, order_number: "ORD-2026-002", status: "Pending", dispatched_at: isoDate(getDate(1)), delivered_at: null },
+    { id: 3, vehicle_id: 2, vehicle_number: "MH-14-XY-9876", driver_name: "Suresh Patil", driver_phone: "+91-9811002200", origin_id: 1, origin_name: "Warehouse A", origin_lat: 18.5089, origin_lng: 73.9259, dest_name: "FreshMart, Kothrud, Pune", dest_lat: 18.5074, dest_lng: 73.8077, distance_km: 7.6, customer_order_id: 3, order_number: "ORD-2026-003", status: "Pending", dispatched_at: isoDate(getDate(0)), delivered_at: null },
+  ];
+
+  // Purchases: Admin POs, Quotations, PO Items
+  const purchaseOrders = [
+    { id: "PO-1", supplier_id: 1, supplier_name: "Agro Fresh Pvt Ltd", order_date: isoDate(getDate(45)), expected_delivery: isoDate(getDate(35)), total_amount: 75600, status: "Received", item_count: 2 },
+    { id: "PO-2", supplier_id: 5, supplier_name: "Global Imports Ltd", order_date: isoDate(getDate(30)), expected_delivery: isoDate(getDate(15)), total_amount: 28500, status: "Sent", item_count: 3 },
+    { id: "PO-3", supplier_id: 3, supplier_name: "National Packaging Solutions", order_date: isoDate(getDate(20)), expected_delivery: isoDate(getDate(8)), total_amount: 90000, status: "Received", item_count: 2 },
+    { id: "PO-4", supplier_id: 2, supplier_name: "Krishna Spices & Co", order_date: isoDate(getDate(10)), expected_delivery: isoDate(getDate(-2)), total_amount: 42000, status: "Sent", item_count: 2 },
+    { id: "PO-5", supplier_id: 4, supplier_name: "Bulk Trading Enterprises", order_date: isoDate(getDate(5)), expected_delivery: isoDate(getDate(-10)), total_amount: 32100, status: "Draft", item_count: 1 },
+  ];
+
+  const purchaseOrderItems = {
+    "PO-1": [
+      { id: 101, purchase_order_id: "PO-1", product_id: 101, product_name: "Wheat Flour (Atta)", quantity: 1200, unit_price: 44, uom: "kg" },
+      { id: 102, purchase_order_id: "PO-1", product_id: 102, product_name: "Rice (Basmati)", quantity: 400, unit_price: 98, uom: "kg" },
+    ],
+    "PO-2": [
+      { id: 201, purchase_order_id: "PO-2", product_id: 103, product_name: "Soybean Oil", quantity: 100, unit_price: 145, uom: "ltr" },
+      { id: 202, purchase_order_id: "PO-2", product_id: 201, product_name: "Red Chilli Powder", quantity: 50, unit_price: 285, uom: "kg" },
+      { id: 203, purchase_order_id: "PO-2", product_id: 202, product_name: "Turmeric Powder", quantity: 80, unit_price: 178, uom: "kg" },
+    ],
+    "PO-3": [
+      { id: 301, purchase_order_id: "PO-3", product_id: 301, product_name: "BOPP Bags (25kg)", quantity: 5000, unit_price: 18, uom: "pcs" },
+    ],
+    "PO-4": [
+      { id: 401, purchase_order_id: "PO-4", product_id: 201, product_name: "Red Chilli Powder", quantity: 100, unit_price: 280, uom: "kg" },
+      { id: 402, purchase_order_id: "PO-4", product_id: 203, product_name: "Cumin Seeds", quantity: 50, unit_price: 420, uom: "kg" },
+    ],
+    "PO-5": [
+      { id: 501, purchase_order_id: "PO-5", product_id: 102, product_name: "Rice (Basmati)", quantity: 300, unit_price: 107, uom: "kg" },
+    ],
+  };
+
+  // Admin/Purchases Quotations (supplier side — different from buyer RFQs)
+  const adminQuotations = [
+    { id: 1, supplier_id: 1, supplier_name: "Agro Fresh Pvt Ltd", product_id: 101, product_name: "Wheat Flour (Atta)", quantity: 1200, unit_price: 44, total_amount: 52800, status: "Accepted", created_at: isoDate(getDate(30)), delivery_due_at: isoDate(getDate(20)), allocations: [{ warehouse_name: "Warehouse A", rack_code: "R-A1", bin_code: "B-101", quantity: 1200, barcode_id: "SKU-WHEAT-ATTA" }] },
+    { id: 2, supplier_id: 2, supplier_name: "Krishna Spices & Co", product_id: 201, product_name: "Red Chilli Powder", quantity: 500, unit_price: 290, total_amount: 145000, status: "Pending", created_at: isoDate(getDate(10)), delivery_due_at: isoDate(getDate(-5)), allocations: [] },
+    { id: 3, supplier_id: 3, supplier_name: "National Packaging Solutions", product_id: 301, product_name: "BOPP Bags (25kg)", quantity: 5000, unit_price: 19, total_amount: 95000, status: "Accepted", created_at: isoDate(getDate(18)), delivery_due_at: isoDate(getDate(8)), allocations: [{ warehouse_name: "Warehouse A", rack_code: "R-A1", bin_code: "B-101", quantity: 5000, barcode_id: "SKU-BOPP-25KG" }] },
+    { id: 4, supplier_id: 5, supplier_name: "Global Imports Ltd", product_id: 102, product_name: "Rice (Basmati)", quantity: 800, unit_price: 98, total_amount: 78400, status: "Rejected", created_at: isoDate(getDate(25)), delivery_due_at: isoDate(getDate(15)), allocations: [] },
+    { id: 5, supplier_id: 4, supplier_name: "Bulk Trading Enterprises", product_id: 103, product_name: "Soybean Oil", quantity: 200, unit_price: 148, total_amount: 29600, status: "Pending", created_at: isoDate(getDate(5)), delivery_due_at: isoDate(getDate(-2)), allocations: [] },
   ];
 
   // Products (used by inventory and buyer quotation dropdowns)
@@ -238,13 +310,6 @@ const seedState = () => {
     },
   ];
 
-  // Ledger/Finance seed (reuse existing mock structure; keep minimal for prototype)
-  const purchaseOrders = [
-    { id: "PO-1", supplier_id: 1, supplier_name: "Fresh Farms Supplier", order_date: isoDate(getDate(45)), expected_delivery: isoDate(getDate(35)), total_amount: 15000, status: "Received", item_count: 4 },
-    { id: "PO-2", supplier_id: 5, supplier_name: "Global Imports Ltd", order_date: isoDate(getDate(30)), expected_delivery: isoDate(getDate(15)), total_amount: 28500, status: "Sent", item_count: 6 },
-    { id: "PO-3", supplier_id: 3, supplier_name: "Premium Supplies Co", order_date: isoDate(getDate(20)), expected_delivery: isoDate(getDate(8)), total_amount: 12300, status: "Received", item_count: 3 },
-  ];
-
   const salesOrders = [
     { id: "SO-1", customer_id: 1, customer_name: "Metro Retail Store", order_number: "SO-2026-001", created_at: getDate(60).toISOString(), total_amount: 8500, status: "delivered", delivery_date: isoDate(getDate(50)) },
     { id: "SO-2", customer_id: 2, customer_name: "City Supermarket", order_number: "SO-2026-002", created_at: getDate(50).toISOString(), total_amount: 12300, status: "delivered", delivery_date: isoDate(getDate(42)) },
@@ -331,6 +396,10 @@ const seedState = () => {
     },
     suppliers,
     products,
+    customers,
+    customerOrders,
+    transport: { vehicles: transportVehicles, shipments: transportShipments },
+    purchases: { orders: purchaseOrders, orderItems: purchaseOrderItems, quotations: adminQuotations },
     warehouse: { 
       warehouses, 
       bins,
@@ -356,7 +425,7 @@ const seedState = () => {
           status: "assigned", assigned_at: isoDate(getDate(0)),
           warehouse_id: 1, warehouse_name: "Warehouse A", warehouse_lat: 18.5089, warehouse_lng: 73.9259,
           delivery_address: "Metro Retail Store, MG Road, Pune", delivery_lat: 18.5204, delivery_lng: 73.8567,
-          route_details: "Warehouse A → Metro Retail Store", total_distance_km: 12.4,
+          route_details: "Warehouse A → Metro Retail Store", total_distance_km: 11.8,
           delivery_date: isoDate(getDate(-1)), estimated_time: "14:30 PM", navigation_url: "https://maps.google.com/?q=18.5204,73.8567",
           items: [
             { product_id: 1001, product_name: "Wheat Flour (Atta)", quantity: 200, unit: "kg", bin_id: 1, rack_code: "R-A1", bin_code: "B-101", bin_location: "R-A1/B-101", picked: false },
@@ -369,7 +438,7 @@ const seedState = () => {
           status: "picking", assigned_at: isoDate(getDate(1)),
           warehouse_id: 2, warehouse_name: "Warehouse B", warehouse_lat: 19.2295, warehouse_lng: 72.8532,
           delivery_address: "City Supermarket, Andheri West, Mumbai", delivery_lat: 19.1365, delivery_lng: 72.8296,
-          route_details: "Warehouse B → City Supermarket", total_distance_km: 18.7,
+          route_details: "Warehouse B → City Supermarket", total_distance_km: 16.3,
           delivery_date: isoDate(getDate(-2)), estimated_time: "11:00 AM", navigation_url: "https://maps.google.com/?q=19.1365,72.8296",
           items: [
             { product_id: 2001, product_name: "Red Chilli Powder", quantity: 50, unit: "kg", bin_id: 3, rack_code: "R-B1", bin_code: "B-201", bin_location: "R-B1/B-201", picked: true },
@@ -382,7 +451,7 @@ const seedState = () => {
           status: "delivered", assigned_at: isoDate(getDate(5)),
           warehouse_id: 1, warehouse_name: "Warehouse A", warehouse_lat: 18.5089, warehouse_lng: 73.9259,
           delivery_address: "FreshMart, Kothrud, Pune", delivery_lat: 18.5074, delivery_lng: 73.8077,
-          route_details: "Warehouse A → FreshMart", total_distance_km: 8.2,
+          route_details: "Warehouse A → FreshMart", total_distance_km: 7.6,
           delivery_date: isoDate(getDate(5)), estimated_time: "10:15 AM", navigation_url: "https://maps.google.com/?q=18.5074,73.8077",
           items: [
             { product_id: 1001, product_name: "Wheat Flour (Atta)", quantity: 300, unit: "kg", bin_id: 1, rack_code: "R-A1", bin_code: "B-101", bin_location: "R-A1/B-101", picked: true },
@@ -434,6 +503,17 @@ const loadFromStorage = () => {
 
     // Migration: ensure dispatcher data exists
     if (!parsed.dispatcher) parsed.dispatcher = seedState().dispatcher;
+
+    // Migration: ensure new modules exist and have actual data (not empty stubs)
+    const fresh = seedState();
+    if (!parsed.customers || !Array.isArray(parsed.customers) || parsed.customers.length === 0)
+      parsed.customers = fresh.customers;
+    if (!parsed.customerOrders || !Array.isArray(parsed.customerOrders) || parsed.customerOrders.length === 0)
+      parsed.customerOrders = fresh.customerOrders;
+    if (!parsed.transport || !parsed.transport.vehicles || parsed.transport.vehicles.length === 0)
+      parsed.transport = fresh.transport;
+    if (!parsed.purchases || !parsed.purchases.orders || parsed.purchases.orders.length === 0)
+      parsed.purchases = fresh.purchases;
 
     return parsed;
   } catch {
@@ -1114,4 +1194,315 @@ export const actions = {
       persist();
     } catch {}
   },
+
+  // ── CUSTOMERS ────────────────────────────────────────────────────────────
+  getCustomers: () => state.customers || [],
+
+  createCustomer: (payload) => {
+    const nextId = Math.max(0, ...(state.customers || []).map(c => c.id)) + 1;
+    const newC = {
+      id: nextId,
+      customer_name: payload.customer_name || "",
+      company_name: payload.company_name || "",
+      email: payload.email || "",
+      phone: payload.phone || "",
+      address_line_1: payload.address_line_1 || "",
+      address_line_2: payload.address_line_2 || "",
+      country: payload.country || "India",
+      state: payload.state || "",
+      city: payload.city || "",
+      pincode: payload.pincode || "",
+      delivery_priority: payload.delivery_priority || "normal",
+      status: payload.status || "active",
+      // Auto-assign approximate coords from city lookup (prototype)
+      latitude: payload.latitude || 18.5204,
+      longitude: payload.longitude || 73.8567,
+    };
+    state.customers = [newC, ...(state.customers || [])];
+    persist(); listeners.forEach(l => l());
+    return newC;
+  },
+
+  updateCustomer: (id, payload) => {
+    state.customers = (state.customers || []).map(c =>
+      c.id === Number(id) ? { ...c, ...payload } : c
+    );
+    persist(); listeners.forEach(l => l());
+    return (state.customers || []).find(c => c.id === Number(id));
+  },
+
+  deleteCustomer: (id) => {
+    state.customers = (state.customers || []).filter(c => c.id !== Number(id));
+    persist(); listeners.forEach(l => l());
+    return { success: true };
+  },
+
+  // ── CUSTOMER ORDERS ───────────────────────────────────────────────────────
+  getCustomerOrders: () => state.customerOrders || [],
+
+  createCustomerOrder: (payload) => {
+    const nextId = Math.max(0, ...(state.customerOrders || []).map(o => o.id)) + 1;
+    const customer = (state.customers || []).find(c => String(c.id) === String(payload.customer_id));
+    const newOrder = {
+      id: nextId,
+      order_number: payload.order_number || `ORD-${Date.now()}`,
+      customer_id: Number(payload.customer_id),
+      customer_name: customer?.customer_name || payload.customer_name || "",
+      company_name: customer?.company_name || "",
+      required_delivery_date: payload.required_delivery_date || "",
+      delivery_address: payload.delivery_address || "",
+      delivery_city: payload.delivery_city || "",
+      delivery_state: payload.delivery_state || "",
+      delivery_country: payload.delivery_country || "",
+      delivery_latitude: payload.delivery_latitude || customer?.latitude || 0,
+      delivery_longitude: payload.delivery_longitude || customer?.longitude || 0,
+      delivery_priority: payload.delivery_priority || "normal",
+      status: "pending",
+      selected_warehouse_name: null,
+      warehouse_distance_km: null,
+      driver_name: null,
+      vehicle_type: null,
+      vehicle_plate: null,
+      delivery_sequence: null,
+      items: payload.items || [],
+    };
+    state.customerOrders = [newOrder, ...(state.customerOrders || [])];
+    persist(); listeners.forEach(l => l());
+    return newOrder;
+  },
+
+  approveCustomerOrder: (id) => {
+    // Simulate auto-logistics: assign nearest warehouse + vehicle
+    const warehouses = state.warehouse?.warehouses || [];
+    const vehicles = state.transport?.vehicles || [];
+    const wh = warehouses[0] || { name: "Warehouse A", id: 1 };
+    const vehicle = vehicles.find(v => v.status === "available") || vehicles[0];
+    state.customerOrders = (state.customerOrders || []).map(o => {
+      if (o.id !== Number(id)) return o;
+      return {
+        ...o,
+        status: "approved",
+        selected_warehouse_name: wh.name,
+        warehouse_distance_km: (Math.random() * 20 + 5).toFixed(1),
+        driver_name: vehicle?.driver_name || "Rajesh Kumar",
+        vehicle_type: vehicle?.vehicle_type || "Truck",
+        vehicle_plate: vehicle?.vehicle_number || "MH-12-AB-1234",
+      };
+    });
+    persist(); listeners.forEach(l => l());
+    const order = (state.customerOrders || []).find(o => o.id === Number(id));
+    return { warehouse: order?.selected_warehouse_name, vehicle: order?.vehicle_plate };
+  },
+
+  reoptimizeCustomerOrder: (id) => {
+    return actions.approveCustomerOrder(id);
+  },
+
+  // ── TRANSPORT ─────────────────────────────────────────────────────────────
+  getTransportVehicles: () => state.transport?.vehicles || [],
+  getTransportShipments: () => state.transport?.shipments || [],
+
+  createTransportVehicle: (payload) => {
+    const vehicles = state.transport?.vehicles || [];
+    const nextId = Math.max(0, ...vehicles.map(v => v.id)) + 1;
+    const wh = (state.warehouse?.warehouses || []).find(w => String(w.id) === String(payload.assigned_warehouse_id));
+    const newV = {
+      id: nextId,
+      vehicle_number: payload.vehicle_number || "",
+      vehicle_type: payload.vehicle_type || "Truck",
+      capacity_kg: Number(payload.capacity_kg || 0),
+      capacity_volume: Number(payload.capacity_volume || 0),
+      driver_name: payload.driver_name || "",
+      driver_phone: payload.driver_phone || "",
+      assigned_warehouse_id: payload.assigned_warehouse_id ? Number(payload.assigned_warehouse_id) : null,
+      warehouse_name: wh?.name || null,
+      current_latitude: Number(payload.current_latitude || 0),
+      current_longitude: Number(payload.current_longitude || 0),
+      status: payload.status || "available",
+    };
+    if (!state.transport) state.transport = { vehicles: [], shipments: [] };
+    state.transport.vehicles = [...vehicles, newV];
+    persist(); listeners.forEach(l => l());
+    return newV;
+  },
+
+  updateTransportVehicle: (id, payload) => {
+    if (!state.transport) return null;
+    const wh = (state.warehouse?.warehouses || []).find(w => String(w.id) === String(payload.assigned_warehouse_id));
+    state.transport.vehicles = (state.transport.vehicles || []).map(v =>
+      v.id === Number(id)
+        ? { ...v, ...payload, warehouse_name: wh?.name ?? v.warehouse_name }
+        : v
+    );
+    persist(); listeners.forEach(l => l());
+    return (state.transport.vehicles || []).find(v => v.id === Number(id));
+  },
+
+  updateTransportShipmentStatus: (id, status) => {
+    if (!state.transport) return null;
+    state.transport.shipments = (state.transport.shipments || []).map(s =>
+      s.id === Number(id)
+        ? { ...s, status, delivered_at: status === "Delivered" ? new Date().toISOString().split("T")[0] : s.delivered_at }
+        : s
+    );
+    persist(); listeners.forEach(l => l());
+    return (state.transport.shipments || []).find(s => s.id === Number(id));
+  },
+
+  // ── PURCHASES (Admin) ─────────────────────────────────────────────────────
+  getPurchaseOrders: () => state.purchases?.orders || [],
+  getPurchaseOrderItems: (id) => (state.purchases?.orderItems || {})[String(id)] || [],
+  getAdminQuotations: () => state.purchases?.quotations || [],
+
+  createPurchaseOrder: (payload) => {
+    if (!state.purchases) state.purchases = { orders: [], orderItems: {}, quotations: [] };
+    const orders = state.purchases.orders || [];
+    // Derive next numeric suffix from existing string IDs like "PO-5"
+    const maxNum = orders.reduce((max, o) => {
+      const n = parseInt(String(o.id).replace(/[^\d]/g, "")) || 0;
+      return n > max ? n : max;
+    }, 0);
+    const newId = `PO-${maxNum + 1}`;
+    const total = (payload.items || []).reduce((s, it) => s + (Number(it.quantity) * Number(it.unit_price)), 0);
+    const newPO = {
+      id: newId,
+      supplier_id: Number(payload.supplier_id),
+      supplier_name: (state.suppliers || []).find(s => String(s.id) === String(payload.supplier_id))?.name || payload.supplier_name || "",
+      order_date: payload.order_date || new Date().toISOString().split("T")[0],
+      expected_delivery: payload.expected_delivery || "",
+      total_amount: total,
+      status: "Draft",
+      item_count: (payload.items || []).length,
+    };
+    state.purchases.orders = [newPO, ...orders];
+    state.purchases.orderItems[newId] = (payload.items || []).map((it, i) => ({
+      id: (maxNum + 1) * 100 + i,
+      purchase_order_id: newId,
+      product_id: Number(it.product_id),
+      product_name: it.product_name || (state.products || []).find(p => String(p.id) === String(it.product_id))?.name || "",
+      quantity: Number(it.quantity),
+      unit_price: Number(it.unit_price),
+      uom: it.uom || "units",
+    }));
+    persist(); listeners.forEach(l => l());
+    return newPO;
+  },
+
+  updatePurchaseOrderStatus: (id, status) => {
+    if (!state.purchases) return null;
+    state.purchases.orders = (state.purchases.orders || []).map(o =>
+      String(o.id) === String(id) ? { ...o, status } : o
+    );
+    persist(); listeners.forEach(l => l());
+    return (state.purchases.orders || []).find(o => String(o.id) === String(id));
+  },
+
+  createAdminSupplier: (payload) => {
+    const nextId = Math.max(0, ...(state.suppliers || []).map(s => s.id)) + 1;
+    const newS = {
+      id: nextId,
+      name: payload.name || "",
+      company_name: payload.name || "",
+      contact: payload.contact_person || "",
+      contact_person: payload.contact_person || "",
+      email: payload.email || "",
+      phone: payload.phone || "",
+      address: payload.address || "",
+      rating: 4.0,
+    };
+    state.suppliers = [...(state.suppliers || []), newS];
+    persist(); listeners.forEach(l => l());
+    return newS;
+  },
+
+  updateAdminSupplier: (id, payload) => {
+    state.suppliers = (state.suppliers || []).map(s =>
+      s.id === Number(id) ? { ...s, ...payload, name: payload.name || s.name, company_name: payload.name || s.company_name } : s
+    );
+    persist(); listeners.forEach(l => l());
+    return (state.suppliers || []).find(s => s.id === Number(id));
+  },
+
+  deleteAdminSupplier: (id) => {
+    state.suppliers = (state.suppliers || []).filter(s => s.id !== Number(id));
+    persist(); listeners.forEach(l => l());
+    return { success: true };
+  },
+
+  updateAdminQuotationStatus: (id, status) => {
+    if (!state.purchases) return null;
+    state.purchases.quotations = (state.purchases.quotations || []).map(q =>
+      q.id === Number(id) ? { ...q, status } : q
+    );
+    persist(); listeners.forEach(l => l());
+    return (state.purchases.quotations || []).find(q => q.id === Number(id));
+  },
+
+  // ── FINANCE LEDGER (manual add/update) ──────────────────────────────────
+  addFinanceLedgerEntry: (payload) => {
+    const entries = state.finance?.ledgerEntries || [];
+    const nextId = Math.max(0, ...entries.map(e => e.id)) + 1;
+    const newEntry = {
+      id: nextId,
+      date: payload.date || new Date().toISOString().split("T")[0],
+      description: payload.description || "",
+      type: payload.type || "Debit",
+      amount: Number(payload.amount || 0),
+      status: payload.status || "Completed",
+      category: payload.category || "Other",
+      source: "manual",
+      reference: payload.reference_id || "",
+    };
+    if (!state.finance) state.finance = { purchaseOrders: [], salesOrders: [], ledgerEntries: [] };
+    state.finance.ledgerEntries = [newEntry, ...entries];
+    persist(); listeners.forEach(l => l());
+    return newEntry;
+  },
+
+  markFinanceLedgerCompleted: (id) => {
+    if (!state.finance) return null;
+    state.finance.ledgerEntries = (state.finance.ledgerEntries || []).map(e =>
+      e.id === Number(id) ? { ...e, status: "Completed" } : e
+    );
+    persist(); listeners.forEach(l => l());
+    return (state.finance.ledgerEntries || []).find(e => e.id === Number(id));
+  },
+
+  getFinanceData: () => {
+    return {
+      purchaseOrders: state.purchases?.orders || state.finance?.purchaseOrders || [],
+      salesOrders: state.customerOrders || state.finance?.salesOrders || [],
+      ledgerEntries: state.finance?.ledgerEntries || []
+    };
+  },
+
+  getReportsData: () => {
+    return {
+      monthlyTrend: [
+        { month: "Jan", revenue: 185000, expenses: 92000, profit: 93000, invoices: 18, bills: 11 },
+        { month: "Feb", revenue: 210000, expenses: 108000, profit: 102000, invoices: 21, bills: 13 },
+        { month: "Mar", revenue: 175000, expenses: 88000, profit: 87000, invoices: 16, bills: 9 },
+        { month: "Apr", revenue: 260000, expenses: 134000, profit: 126000, invoices: 26, bills: 15 },
+        { month: "May", revenue: 312000, expenses: 158000, profit: 154000, invoices: 31, bills: 18 },
+        { month: "Jun", revenue: 286000, expenses: 149000, profit: 137000, invoices: 28, bills: 17 },
+      ],
+      categories: [
+        { name: "Salaries", amount: 325000 },
+        { name: "Software", amount: 84000 },
+        { name: "Marketing", amount: 128000 },
+        { name: "Hosting", amount: 56000 },
+        { name: "Office", amount: 36000 },
+        { name: "Others", amount: 100000 },
+      ],
+      profitLoss: [
+        { label: "Service Revenue", type: "income", amount: 1185000 },
+        { label: "Product Revenue", type: "income", amount: 253000 },
+        { label: "Salaries & Wages", type: "expense", amount: 325000 },
+        { label: "Software Tools", type: "expense", amount: 84000 },
+        { label: "Marketing Spend", type: "expense", amount: 128000 },
+        { label: "Hosting & Infrastructure", type: "expense", amount: 56000 },
+        { label: "Office & Operations", type: "expense", amount: 136000 },
+      ]
+    };
+  }
 };

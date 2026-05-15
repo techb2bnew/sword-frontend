@@ -10,8 +10,8 @@ export default function Sidebar({ activeModule, setActiveModule, user, onLogout 
     { id: "purchases", label: "Purchases", icon: "🤝" },
     { id: "customer-orders", label: "Customer Orders", icon: "🛒", badge: "New" },
     { id: "transport", label: "Transport", icon: "🚛" },
-    { id: "finance", label: "Finance & Accounts", icon: "💰" },
-    { id: "reports", label: "Reports", icon: "📈" },
+    { id: "finance-ledger", label: "Finance & Accounts", icon: "💰" },
+    { id: "finance-reports", label: "Reports", icon: "📈" },
   ];
 
   const supplierMenu = [

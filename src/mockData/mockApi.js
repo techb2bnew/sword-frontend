@@ -245,6 +245,117 @@ export async function mockRequest(method, url, bodyOrConfig, maybeConfig) {
     return ok(actions.markDispatcherItemPicked(Number(pickItem[1]), Number(pickItem[2])));
   }
 
+  // ── CUSTOMERS ─────────────────────────────────────────────────────────────
+  if (path === "/customers" && method.toLowerCase() === "get") {
+    return ok(actions.getCustomers());
+  }
+  if (path === "/customers" && method.toLowerCase() === "post") {
+    return ok(actions.createCustomer(body || {}));
+  }
+  const custId = matchJson(path, /^\/customers\/(\d+)$/);
+  if (custId && method.toLowerCase() === "put") {
+    return ok(actions.updateCustomer(Number(custId[1]), body || {}));
+  }
+  if (custId && method.toLowerCase() === "delete") {
+    return ok(actions.deleteCustomer(Number(custId[1])));
+  }
+
+  // ── CUSTOMER ORDERS ───────────────────────────────────────────────────────
+  if (path === "/customer-orders" && method.toLowerCase() === "get") {
+    return ok(actions.getCustomerOrders());
+  }
+  if (path === "/customer-orders" && method.toLowerCase() === "post") {
+    return ok(actions.createCustomerOrder(body || {}));
+  }
+  const coApprove = matchJson(path, /^\/customer-orders\/(\d+)$/);
+  if (coApprove && method.toLowerCase() === "put") {
+    const result = actions.approveCustomerOrder(Number(coApprove[1]));
+    return ok(result);
+  }
+  const coReoptimize = matchJson(path, /^\/customer-orders\/(\d+)\/select-warehouse$/);
+  if (coReoptimize && method.toLowerCase() === "post") {
+    return ok(actions.reoptimizeCustomerOrder(Number(coReoptimize[1])));
+  }
+
+  // ── TRANSPORT ─────────────────────────────────────────────────────────────
+  if (path === "/transport/vehicles" && method.toLowerCase() === "get") {
+    return ok(actions.getTransportVehicles());
+  }
+  if (path === "/transport/vehicles" && method.toLowerCase() === "post") {
+    return ok(actions.createTransportVehicle(body || {}));
+  }
+  const vehId = matchJson(path, /^\/transport\/vehicles\/(\d+)$/);
+  if (vehId && method.toLowerCase() === "put") {
+    return ok(actions.updateTransportVehicle(Number(vehId[1]), body || {}));
+  }
+
+  if (path === "/transport/shipments" && method.toLowerCase() === "get") {
+    return ok(actions.getTransportShipments());
+  }
+  const shmStatus = matchJson(path, /^\/transport\/shipments\/(\d+)\/status$/);
+  if (shmStatus && method.toLowerCase() === "put") {
+    return ok(actions.updateTransportShipmentStatus(Number(shmStatus[1]), body?.status));
+  }
+
+  // ── PURCHASES (Admin) ─────────────────────────────────────────────────────
+  if (path === "/purchases/orders" && method.toLowerCase() === "get") {
+    return ok(actions.getPurchaseOrders());
+  }
+  if (path === "/purchases/orders" && method.toLowerCase() === "post") {
+    return ok(actions.createPurchaseOrder(body || {}));
+  }
+  const poStatus = matchJson(path, /^\/purchases\/orders\/([\w-]+)\/status$/);
+  if (poStatus && method.toLowerCase() === "put") {
+    return ok(actions.updatePurchaseOrderStatus(poStatus[1], body?.status));
+  }
+  const poItems = matchJson(path, /^\/purchases\/orders\/([\w-]+)\/items$/);
+  if (poItems && method.toLowerCase() === "get") {
+    return ok(actions.getPurchaseOrderItems(poItems[1]));
+  }
+
+  // Suppliers CRUD (admin Purchases module)
+  if (path === "/purchases/suppliers" && method.toLowerCase() === "post") {
+    return ok(actions.createAdminSupplier(body || {}));
+  }
+  const suppId = matchJson(path, /^\/purchases\/suppliers\/(\d+)$/);
+  if (suppId && method.toLowerCase() === "put") {
+    return ok(actions.updateAdminSupplier(Number(suppId[1]), body || {}));
+  }
+  if (suppId && method.toLowerCase() === "delete") {
+    return ok(actions.deleteAdminSupplier(Number(suppId[1])));
+  }
+
+  // Admin quotations
+  if (path === "/quotations" && method.toLowerCase() === "get") {
+    return ok(actions.getAdminQuotations());
+  }
+  const qtStatus = matchJson(path, /^\/quotations\/(\d+)\/status$/);
+  if (qtStatus && method.toLowerCase() === "put") {
+    return ok(actions.updateAdminQuotationStatus(Number(qtStatus[1]), body?.status));
+  }
+
+  // ── FINANCE ──────────────────────────────────────────────────────────────
+  if (path === "/finance/data" && method.toLowerCase() === "get") {
+    return ok(actions.getFinanceData());
+  }
+  if (path === "/finance/ledger" && method.toLowerCase() === "post") {
+    return ok(actions.addFinanceLedgerEntry(body || {}));
+  }
+  const ledgerStatus = matchJson(path, /^\/finance\/ledger\/(\d+)\/status$/);
+  if (ledgerStatus && method.toLowerCase() === "put") {
+    return ok(actions.markFinanceLedgerCompleted(Number(ledgerStatus[1])));
+  }
+
+  // ── REPORTS ──────────────────────────────────────────────────────────────
+  if (path === "/reports/data" && method.toLowerCase() === "get") {
+    return ok(actions.getReportsData());
+  }
+
+  // ── NOTIFICATIONS (global) ────────────────────────────────────────────────
+  if (path === "/notifications" && method.toLowerCase() === "get") {
+    return ok(actions.getDispatcherNotifications());
+  }
+
   // Fallback: return empty arrays to keep frontend alive
   return ok([]);
 }
@@ -255,21 +366,36 @@ export function installMockAxios() {
   if (installed) return;
   installed = true;
 
-  axios.interceptors.request.use((req) => {
-    // If prototype mock mode is enabled, short-circuit to mock.
-    // We don't cancel here; we just mark. The adapter isn't swapped, so we use response intercept.
-    req.__isMockPrototype = true;
-    return req;
+  // Intercept ALL requests — resolve immediately from mock store
+  // without even sending a network request.
+  axios.interceptors.request.use(async (config) => {
+    const method = (config.method || "get").toLowerCase();
+    const url = config.url || "";
+    const data = config.data;
+
+    try {
+      const response = await mockRequest(method, url, data, config);
+      // Throw a special resolved signal so response interceptor can return it
+      const cancelToken = new axios.CancelToken((cancel) => {
+        cancel({ __mockResponse: response });
+      });
+      config.cancelToken = cancelToken;
+    } catch (e) {
+      // ignore — let request fall through
+    }
+    return config;
   });
 
+  // Handle the cancelled (mocked) requests and real errors
   axios.interceptors.response.use(
     (res) => res,
     async (err) => {
-      // If backend is down OR not running, use mock data.
-      // Also handle requests we want to always mock.
-      const useMock = true;
-      if (!useMock) return Promise.reject(err);
+      // If this was cancelled by our mock interceptor, return the mock response
+      if (axios.isCancel(err) && err.message?.__mockResponse) {
+        return Promise.resolve(err.message.__mockResponse);
+      }
 
+      // If backend is down OR returned an error, also use mock data
       try {
         const cfg = err.config || {};
         const method = (cfg.method || "get").toLowerCase();

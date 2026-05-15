@@ -256,7 +256,6 @@ export default function Transport({ push }) {
               <div style={{ marginTop: 16, display: "flex", justifyContent: "space-between", fontSize: 12 }}>
                 <div><strong>From:</strong> {selectedShipment.origin_name}</div>
                 <div><strong>To:</strong> {selectedShipment.dest_name}</div>
-                <div><strong>Total Distance:</strong> {parseFloat(selectedShipment.distance_km || 0).toFixed(1)} km</div>
               </div>
             </Modal>
           )}

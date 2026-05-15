@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { API } from "../config";
 import Modal from "../components/Modal";
-import generateMockData from "../mockData/financeData";
+
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 export default function Finance({ push }) {
@@ -25,13 +25,15 @@ export default function Finance({ push }) {
 
   const fetchData = useCallback(async () => {
     try {
-      const { purchaseOrders, salesOrders, ledgerEntries } = generateMockData();
+      const headers = { Authorization: `Bearer ${localStorage.getItem("erp_token")}` };
+      const res = await axios.get(`${API}/finance/data`, { headers });
+      const { purchaseOrders, salesOrders, ledgerEntries } = res.data;
       
       // Calculate stats from mock data
-      const completedSales = salesOrders.filter(o => o.status === 'delivered').reduce((sum, o) => sum + parseFloat(o.total_amount || 0), 0);
-      const completedPurchases = purchaseOrders.filter(o => o.status === 'Received').reduce((sum, o) => sum + parseFloat(o.total_amount || 0), 0);
-      const pendingPurchases = purchaseOrders.filter(o => o.status !== 'Received' && o.status !== 'Cancelled').reduce((sum, o) => sum + parseFloat(o.total_amount || 0), 0);
-      const pendingSales = salesOrders.filter(o => o.status !== 'delivered' && o.status !== 'cancelled').reduce((sum, o) => sum + parseFloat(o.total_amount || 0), 0);
+      const completedSales = (salesOrders || []).filter(o => o.status === 'delivered').reduce((sum, o) => sum + parseFloat(o.total_amount || 0), 0);
+      const completedPurchases = (purchaseOrders || []).filter(o => o.status === 'Received').reduce((sum, o) => sum + parseFloat(o.total_amount || 0), 0);
+      const pendingPurchases = (purchaseOrders || []).filter(o => o.status !== 'Received' && o.status !== 'Cancelled').reduce((sum, o) => sum + parseFloat(o.total_amount || 0), 0);
+      const pendingSales = (salesOrders || []).filter(o => o.status !== 'delivered' && o.status !== 'cancelled').reduce((sum, o) => sum + parseFloat(o.total_amount || 0), 0);
       
       const cashOnHand = completedSales - completedPurchases;
       
@@ -42,13 +44,13 @@ export default function Finance({ push }) {
         netProfit: `£${cashOnHand.toLocaleString('en-IN')}`
       });
 
-      setLedger(ledgerEntries);
+      setLedger(ledgerEntries || []);
       
       // Process chart data
       const monthlyData = {};
       const categoryTotals = {};
       
-      ledgerEntries.forEach(item => {
+      (ledgerEntries || []).forEach(item => {
         const month = new Date(item.date).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
         if (!monthlyData[month]) monthlyData[month] = { month, income: 0, expenses: 0 };
         

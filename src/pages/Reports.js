@@ -1,122 +1,6 @@
-import React, { useMemo, useState } from "react";
-
-/* ─────────────────────────── dummy data ─────────────────────────── */
-
-const DUMMY_REPORT_DATA = [
-  {
-    month: "Jan",
-    revenue: 185000,
-    expenses: 92000,
-    profit: 93000,
-    invoices: 18,
-    bills: 11,
-  },
-  {
-    month: "Feb",
-    revenue: 210000,
-    expenses: 108000,
-    profit: 102000,
-    invoices: 21,
-    bills: 13,
-  },
-  {
-    month: "Mar",
-    revenue: 175000,
-    expenses: 88000,
-    profit: 87000,
-    invoices: 16,
-    bills: 9,
-  },
-  {
-    month: "Apr",
-    revenue: 260000,
-    expenses: 134000,
-    profit: 126000,
-    invoices: 26,
-    bills: 15,
-  },
-  {
-    month: "May",
-    revenue: 312000,
-    expenses: 158000,
-    profit: 154000,
-    invoices: 31,
-    bills: 18,
-  },
-  {
-    month: "Jun",
-    revenue: 286000,
-    expenses: 149000,
-    profit: 137000,
-    invoices: 28,
-    bills: 17,
-  },
-];
-
-const DUMMY_EXPENSE_CATEGORIES = [
-  {
-    name: "Salaries",
-    amount: 325000,
-  },
-  {
-    name: "Software",
-    amount: 84000,
-  },
-  {
-    name: "Marketing",
-    amount: 128000,
-  },
-  {
-    name: "Hosting",
-    amount: 56000,
-  },
-  {
-    name: "Office",
-    amount: 36000,
-  },
-  {
-    name: "Others",
-    amount: 100000,
-  },
-];
-
-const DUMMY_PROFIT_LOSS = [
-  {
-    label: "Service Revenue",
-    type: "income",
-    amount: 1185000,
-  },
-  {
-    label: "Product Revenue",
-    type: "income",
-    amount: 253000,
-  },
-  {
-    label: "Salaries & Wages",
-    type: "expense",
-    amount: 325000,
-  },
-  {
-    label: "Software Tools",
-    type: "expense",
-    amount: 84000,
-  },
-  {
-    label: "Marketing Spend",
-    type: "expense",
-    amount: 128000,
-  },
-  {
-    label: "Hosting & Infrastructure",
-    type: "expense",
-    amount: 56000,
-  },
-  {
-    label: "Office & Operations",
-    type: "expense",
-    amount: 136000,
-  },
-];
+import React, { useMemo, useState, useEffect, useCallback } from "react";
+import axios from "axios";
+import { API } from "../config";
 
 /* ─────────────────────────── helpers ─────────────────────────── */
 
@@ -564,14 +448,34 @@ const Reports = ({ push }) => {
   const [reportType, setReportType] = useState("overview");
   const [period, setPeriod] = useState("last_6_months");
   const [currency, setCurrency] = useState("INR");
+  
+  const [rawData, setRawData] = useState({
+    monthlyTrend: [],
+    categories: [],
+    profitLoss: []
+  });
+
+  const fetchData = useCallback(async () => {
+    try {
+      const headers = { Authorization: `Bearer ${localStorage.getItem("erp_token")}` };
+      const res = await axios.get(`${API}/reports/data`, { headers });
+      setRawData(res.data);
+    } catch {
+      push?.("Failed to fetch report data", "error");
+    }
+  }, [push]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const reportData = useMemo(() => {
+    const data = rawData.monthlyTrend || [];
     if (period === "last_3_months") {
-      return DUMMY_REPORT_DATA.slice(-3);
+      return data.slice(-3);
     }
-
-    return DUMMY_REPORT_DATA;
-  }, [period]);
+    return data;
+  }, [period, rawData.monthlyTrend]);
 
   const analytics = useMemo(() => {
     const totalRevenue = reportData.reduce((sum, item) => {
@@ -619,12 +523,13 @@ const Reports = ({ push }) => {
   }, [reportData]);
 
   const profitLoss = useMemo(() => {
-    const totalIncome = DUMMY_PROFIT_LOSS.filter((item) => item.type === "income").reduce(
+    const rows = rawData.profitLoss || [];
+    const totalIncome = rows.filter((item) => item.type === "income").reduce(
       (sum, item) => sum + item.amount,
       0
     );
 
-    const totalExpense = DUMMY_PROFIT_LOSS.filter(
+    const totalExpense = rows.filter(
       (item) => item.type === "expense"
     ).reduce((sum, item) => sum + item.amount, 0);
 
@@ -634,16 +539,17 @@ const Reports = ({ push }) => {
       totalIncome,
       totalExpense,
       netProfit,
-      rows: DUMMY_PROFIT_LOSS,
+      rows: rows,
     };
-  }, []);
+  }, [rawData.profitLoss]);
 
   const handleGenerateReport = () => {
-    push?.("Financial report generated successfully", "success");
+    fetchData();
+    push?.("Financial report updated successfully", "success");
   };
 
   const handleExport = () => {
-    push?.("Report export prepared using dummy data", "info");
+    push?.("Report export prepared using current data", "info");
   };
 
   return (
@@ -1290,7 +1196,7 @@ const Reports = ({ push }) => {
               Expense Category Breakdown
             </h3>
 
-            <CategoryChart data={DUMMY_EXPENSE_CATEGORIES} />
+            <CategoryChart data={rawData.categories || []} />
           </div>
 
           <div
