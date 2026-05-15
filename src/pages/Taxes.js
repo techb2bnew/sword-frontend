@@ -130,7 +130,7 @@ const DUMMY_TAX_CATEGORIES = [
 
 const todayISO = () => new Date().toISOString().split("T")[0];
 
-const formatMoney = (value, currency = "INR") => {
+const formatMoney = (value, currency = "EUR") => {
   const amount = Number(value || 0);
 
   const symbolMap = {

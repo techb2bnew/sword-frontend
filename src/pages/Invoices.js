@@ -15,7 +15,7 @@ const DUMMY_INVOICES = [
     issue_date: "2026-05-01",
     due_date: "2026-05-15",
     status: "Sent",
-    currency: "INR",
+    currency: "EUR",
     gst_rate: 18,
     taxable_amount: 25000,
     gst_amount: 4500,
@@ -39,7 +39,7 @@ const DUMMY_INVOICES = [
     issue_date: "2026-04-20",
     due_date: "2026-05-02",
     status: "Partially Paid",
-    currency: "INR",
+    currency: "EUR",
     gst_rate: 18,
     taxable_amount: 50000,
     gst_amount: 9000,
@@ -63,7 +63,7 @@ const DUMMY_INVOICES = [
     issue_date: "2026-04-01",
     due_date: "2026-04-10",
     status: "Paid",
-    currency: "INR",
+    currency: "EUR",
     gst_rate: 18,
     taxable_amount: 15000,
     gst_amount: 2700,
@@ -87,7 +87,7 @@ const DUMMY_INVOICES = [
     issue_date: "2026-05-01",
     due_date: "2026-05-08",
     status: "Draft",
-    currency: "INR",
+    currency: "EUR",
     gst_rate: 18,
     taxable_amount: 6000,
     gst_amount: 1080,
@@ -111,7 +111,7 @@ const todayISO = () => new Date().toISOString().split("T")[0];
 
 const createLineItemId = () => `${Date.now()}-${Math.random()}`;
 
-const formatMoney = (value, currency = "INR") => {
+const formatMoney = (value, currency = "EUR") => {
   const amount = Number(value || 0);
 
   const symbolMap = {
@@ -433,7 +433,7 @@ const Invoices = ({ push }) => {
       return sum + Number(item.total_amount || 0);
     }, 0);
 
-    const currency = itemsOfType[0]?.currency || "INR";
+    const currency = itemsOfType[0]?.currency || "EUR";
 
     return { total, totalVal, outstanding, paid, currency };
   }, [items, filterType]);

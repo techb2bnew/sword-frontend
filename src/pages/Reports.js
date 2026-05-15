@@ -447,7 +447,7 @@ const ProfitLineChart = ({ data }) => {
 const Reports = ({ push }) => {
   const [reportType, setReportType] = useState("overview");
   const [period, setPeriod] = useState("last_6_months");
-  const [currency, setCurrency] = useState("INR");
+  const [currency, setCurrency] = useState("EUR");
   
   const [rawData, setRawData] = useState({
     monthlyTrend: [],
