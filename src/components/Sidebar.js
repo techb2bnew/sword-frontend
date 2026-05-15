@@ -104,13 +104,17 @@ export default function Sidebar({ activeModule, setActiveModule, user, onLogout 
       </div>
 
       <div className="sidebar-footer">
-        <div className="user-card" onClick={onLogout}>
-          <div className="user-avatar">{user?.username?.charAt(0).toUpperCase()}</div>
+        <div className="nav-item">
+           <div className="user-avatar">{user?.username?.charAt(0).toUpperCase()}</div>
           <div className="user-info">
             <div className="user-name">{user?.username}</div>
             <div className="user-role">{user?.role}</div>
           </div>
           <span style={{ marginLeft: "auto", fontSize: 12, opacity: 0.5 }}>🚪</span>
+        </div>
+        <div className="user-card" onClick={onLogout}>
+         <div className="user-avatar">L</div>
+         <span style={{ marginLeft: "10px" }}>Logout</span>
         </div>
       </div>
     </aside>

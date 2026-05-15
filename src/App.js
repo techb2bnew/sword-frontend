@@ -118,7 +118,7 @@ function App() {
     localStorage.removeItem("erp_token");
     localStorage.removeItem("erp_user");
     setUser(null);
-    push("Logged out successfully");
+    // push("Logged out successfully");
   };
 
   if (!user) return <AuthPage onLogin={setUser} push={push} />;
