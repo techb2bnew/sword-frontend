@@ -42,7 +42,9 @@ import BuyerOverview from "./pages/BuyerOverview";
 import BuyerPurchaseOrders from "./pages/BuyerPurchaseOrders";
 import WarehouseManagerDashboard from "./pages/WarehouseManagerDashboard";
 import DriverDashboard from "./pages/DispatcherDashboard";
-
+import CustomerDashboard from "./pages/CustomerDashboard";
+import CustomerProfile from "./pages/CustomerProfile";
+import CustomerProducts from "./pages/CustomerProducts";
 
 // ── Toast Hook ──────────────────────────────────────────────────────────────
 function useToast() {
@@ -108,6 +110,8 @@ function App() {
         setActiveModule('driver-dashboard');
       } else if (user.role === 'dispatcher') {
         setActiveModule('dispatcher-dashboard');
+      } else if (user.role === 'customer') {
+        setActiveModule('customer-dashboard');
       } else {
         setActiveModule('dashboard');
       }
@@ -143,7 +147,10 @@ function App() {
           {activeModule === "inventory" && <Inventory products={products} onRefresh={fetchProducts} push={push} user={user} />}
           {activeModule === "advanced-inventory" && <AdvancedInventory push={push} user={user} />}
           {activeModule === "purchases" && <Purchases products={products} onRefreshProducts={fetchProducts} push={push} />}
+          {activeModule === "customer-dashboard" && <CustomerDashboard products={products} push={push} user={user} setActiveModule={setActiveModule} />}
+          {activeModule === "customer-products" && <CustomerProducts products={products} push={push} user={user} setActiveModule={setActiveModule} />}
           {activeModule === "customer-orders" && <CustomerOrders products={products} push={push} user={user} />}
+          {activeModule === "profile" && <CustomerProfile push={push} user={user} />}
           {activeModule === "transport" && <Transport push={push} />}
           
           {/* Finance & Accounting Modules */}

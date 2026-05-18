@@ -190,7 +190,12 @@ export default function AuthPage({ onLogin, push }) {
       email: "driver@sword.com",
       password: "123456",
     },
-    
+    {
+      label: "Customer",
+      role: "customer",
+      email: "customer@sword.com",
+      password: "123456",
+    },
   ];
 
   React.useEffect(() => {

@@ -21,7 +21,8 @@ export default function Sidebar({ activeModule, setActiveModule, user, onLogout 
   ];
 
   const customerMenu = [
-    { id: "dashboard", label: "Dashboard", icon: "📊" },
+    { id: "customer-dashboard", label: "Dashboard", icon: "📊" },
+    { id: "customer-products", label: "Browse Products", icon: "🛍️" },
     { id: "customer-orders", label: "My Orders", icon: "🛒", badge: "Live" },
     { id: "profile", label: "My Profile", icon: "👤" },
   ];

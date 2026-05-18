@@ -11,6 +11,7 @@ export default function CustomerOrders({ products, push, user }) {
   const [calcLoading, setCalcLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
+  const [expandedOrderId, setExpandedOrderId] = useState(null);
   
   const [countries, setCountries] = useState([]);
   const [states, setStates] = useState([]);
@@ -103,6 +104,21 @@ export default function CustomerOrders({ products, push, user }) {
     finally { setCalcLoading(false); }
   };
 
+  const handleWithdraw = async (id) => {
+    if (!window.confirm("Are you sure you want to withdraw this order?")) return;
+    setLoading(true);
+    try {
+      const headers = { Authorization: `Bearer ${localStorage.getItem("erp_token")}` };
+      await axios.delete(`${API}/customer-orders/${id}`, { headers });
+      push("Order withdrawn successfully", "success");
+      fetchData();
+    } catch (err) {
+      push(err.response?.data?.error || "Failed to withdraw order", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleAddOrder = async (e) => {
     e.preventDefault();
     if (!newOrder.customer_id && isAdmin) {
@@ -137,7 +153,9 @@ export default function CustomerOrders({ products, push, user }) {
     }
   };
 
-  const filteredOrders = orders.filter(o => 
+  const myOrders = isAdmin ? orders : orders.filter(o => String(o.customer_id) === String(user?.id));
+  
+  const filteredOrders = myOrders.filter(o => 
     o.order_number.toLowerCase().includes(searchTerm.toLowerCase()) || 
     (o.customer_name && o.customer_name.toLowerCase().includes(searchTerm.toLowerCase()))
   );
@@ -186,57 +204,115 @@ export default function CustomerOrders({ products, push, user }) {
                 <th>Fleet / Driver</th>
                 <th>Route Info</th>
                 <th>Status</th>
-                <th style={{ textAlign: 'right' }}>Logistics Action</th>
+                <th style={{ textAlign: 'right' }}>{isAdmin ? 'Logistics Action' : 'Action'}</th>
               </tr>
             </thead>
             <tbody>
               {filteredOrders.map(o => (
-                <tr key={o.id}>
-                  <td style={{ fontWeight: 800, color: 'var(--accent)' }}>{o.order_number}</td>
-                  <td>
-                    <div style={{ fontWeight: 700 }}>{o.customer_name}</div>
-                    <div style={{ fontSize: 10, opacity: 0.5 }}>{o.company_name}</div>
-                  </td>
-                  <td>
-                    <div style={{ fontWeight: 600 }}>{new Date(o.required_delivery_date).toLocaleDateString()}</div>
-                    <div className={`pill ${o.delivery_priority === 'urgent' ? 'red' : 'blue'}`} style={{ fontSize: 8, padding: '2px 5px' }}>{o.delivery_priority.toUpperCase()}</div>
-                  </td>
-                  <td>
-                    {o.selected_warehouse_name ? (
-                      <div>
-                        <div style={{ fontWeight: 700, color: 'var(--accent-1)' }}>{o.selected_warehouse_name}</div>
-                        <div style={{ fontSize: 9, opacity: 0.6 }}>{parseFloat(o.warehouse_distance_km || 0).toFixed(1)}km from origin</div>
-                      </div>
-                    ) : <span style={{ opacity: 0.3, fontStyle: 'italic' }}>Pending Auto-Select</span>}
-                  </td>
-                  <td>
-                    {o.driver_name ? (
-                      <div>
-                        <div style={{ fontWeight: 700 }}>👤 {o.driver_name}</div>
-                        <div style={{ fontSize: 10, opacity: 0.7 }}>{o.vehicle_type} ({o.vehicle_plate})</div>
-                      </div>
-                    ) : (
-                      o.status === 'warehouse_selected' ? <span style={{ color: 'var(--accent-4)', fontWeight: 800, fontSize: 11 }}>⚠️ Manual Fleet Required</span> : <span style={{ opacity: 0.3 }}>—</span>
-                    )}
-                  </td>
-                  <td>
-                    {o.delivery_sequence ? (
-                      <div style={{ background: 'rgba(99, 102, 241, 0.1)', padding: '6px 12px', borderRadius: 8, border: '1px solid var(--accent)', display: 'inline-block' }}>
-                        <div style={{ fontSize: 11, fontWeight: 900, color: 'var(--accent)' }}>STOP #{o.delivery_sequence}</div>
-                        <div style={{ fontSize: 9, fontWeight: 600, opacity: 0.8 }}>Optimized Route</div>
-                      </div>
-                    ) : '—'}
-                  </td>
-                  <td><span className={`pill ${getStatusPillClass(o.status)}`}>{o.status.replace('_', ' ').toUpperCase()}</span></td>
-                  <td style={{ textAlign: 'right' }}>
-                    {o.status === 'pending' ? (
-                      <button className="btn btn-primary btn-sm" onClick={() => handleApprove(o.id)} style={{ padding: '8px 20px', fontWeight: 800 }}>APPROVE & DISPATCH</button>
-                    ) : (
-                      <button className="btn btn-secondary btn-sm" onClick={() => handleManualTrigger(o.id)} style={{ padding: '6px 12px', fontSize: 10 }}>RE-OPTIMIZE</button>
-                    )}
-                  </td>
-                </tr>
-              ))}
+                <React.Fragment key={o.id}>
+                  <tr style={{ borderBottom: expandedOrderId === o.id ? 'none' : '1px solid var(--border)' }}>
+                    <td 
+                      style={{ fontWeight: 800, color: 'var(--accent-1)', cursor: 'pointer', textDecoration: 'underline', display: 'flex', alignItems: 'center', gap: '4px' }}
+                      onClick={() => setExpandedOrderId(expandedOrderId === o.id ? null : o.id)}
+                    >
+                      {o.order_number}
+                      <span style={{ fontSize: '9px', opacity: 0.5 }}>{expandedOrderId === o.id ? '▲' : '▼'}</span>
+                    </td>
+                    <td>
+                      <div style={{ fontWeight: 700 }}>{o.customer_name}</div>
+                      <div style={{ fontSize: 10, opacity: 0.5 }}>{o.company_name}</div>
+                    </td>
+                    <td>
+                      <div style={{ fontWeight: 600 }}>{new Date(o.required_delivery_date).toLocaleDateString()}</div>
+                      <div className={`pill ${o.delivery_priority === 'urgent' ? 'red' : 'blue'}`} style={{ fontSize: 8, padding: '2px 5px' }}>{o.delivery_priority.toUpperCase()}</div>
+                    </td>
+                    <td>
+                      {o.selected_warehouse_name ? (
+                        <div>
+                          <div style={{ fontWeight: 700, color: 'var(--accent-1)' }}>{o.selected_warehouse_name}</div>
+                          <div style={{ fontSize: 9, opacity: 0.6 }}>{parseFloat(o.warehouse_distance_km || 0).toFixed(1)}km from origin</div>
+                        </div>
+                      ) : <span style={{ opacity: 0.3, fontStyle: 'italic' }}>Pending Auto-Select</span>}
+                    </td>
+                    <td>
+                      {o.driver_name ? (
+                        <div>
+                          <div style={{ fontWeight: 700 }}>👤 {o.driver_name}</div>
+                          <div style={{ fontSize: 10, opacity: 0.7 }}>{o.vehicle_type} ({o.vehicle_plate})</div>
+                        </div>
+                      ) : (
+                        o.status === 'warehouse_selected' ? <span style={{ color: 'var(--accent-4)', fontWeight: 800, fontSize: 11 }}>⚠️ Manual Fleet Required</span> : <span style={{ opacity: 0.3 }}>—</span>
+                      )}
+                    </td>
+                    <td>
+                      {o.delivery_sequence ? (
+                        <div style={{ background: 'rgba(99, 102, 241, 0.1)', padding: '6px 12px', borderRadius: 8, border: '1px solid var(--accent)', display: 'inline-block' }}>
+                          <div style={{ fontSize: 11, fontWeight: 900, color: 'var(--accent)' }}>STOP #{o.delivery_sequence}</div>
+                          <div style={{ fontSize: 9, fontWeight: 600, opacity: 0.8 }}>Optimized Route</div>
+                        </div>
+                      ) : '—'}
+                    </td>
+                    <td><span className={`pill ${getStatusPillClass(o.status)}`}>{o.status.replace('_', ' ').toUpperCase()}</span></td>
+                    <td style={{ textAlign: 'right' }}>
+                      {isAdmin ? (
+                        o.status === 'pending' ? (
+                          <button className="btn btn-primary btn-sm" onClick={() => handleApprove(o.id)} style={{ padding: '8px 20px', fontWeight: 800 }}>APPROVE & DISPATCH</button>
+                        ) : (
+                          <button className="btn btn-secondary btn-sm" onClick={() => handleManualTrigger(o.id)} style={{ padding: '6px 12px', fontSize: 10 }}>RE-OPTIMIZE</button>
+                        )
+                      ) : (
+                        o.status === 'pending' ? (
+                          <button className="btn btn-secondary btn-sm" onClick={() => handleWithdraw(o.id)} style={{ padding: '6px 12px', fontSize: 10, color: 'var(--accent-4)', borderColor: 'var(--accent-4)' }}>WITHDRAW</button>
+                        ) : (
+                          <span style={{ opacity: 0.3 }}>—</span>
+                        )
+                      )}
+                    </td>
+                  </tr>
+                  {expandedOrderId === o.id && (
+                    <tr style={{ background: 'rgba(0, 0, 0, 0.015)' }}>
+                      <td colSpan={8} style={{ padding: '16px 24px', borderTop: 'none' }}>
+                        <div className="fade-down" style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <h4 style={{ margin: 0, fontSize: '13px', fontWeight: 800, color: 'var(--accent-1)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                              Order Items & Negotiated Price Offers
+                            </h4>
+                            <span style={{ fontSize: '12px', fontWeight: 600, opacity: 0.6 }}>
+                              Total Weight: {o.items?.reduce((acc, curr) => acc + (curr.weight_kg || 0), 0)} kg
+                            </span>
+                          </div>
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '12px' }}>
+                            {(o.items || []).map((item, idx) => (
+                              <div key={idx} style={{ background: 'var(--bg-surface)', padding: '12px', borderRadius: '12px', border: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div>
+                                  <div style={{ fontWeight: 700, fontSize: '12.5px' }}>{item.product_name}</div>
+                                  <div style={{ fontSize: '11px', opacity: 0.6 }}>Quantity: {item.quantity} units</div>
+                                </div>
+                                <div style={{ textAlign: 'right' }}>
+                                  <div style={{ fontSize: '13px', fontWeight: 800, color: '#10b981' }}>
+                                    Offered: £{item.offered_price_per_unit || item.unit_price || 0}
+                                  </div>
+                                  {(item.catalog_price_per_unit || item.unit_price) && (
+                                    <div style={{ fontSize: '10px', opacity: 0.5, textDecoration: item.offered_price_per_unit && item.offered_price_per_unit !== item.catalog_price_per_unit ? 'line-through' : 'none' }}>
+                                      Catalog: £{item.catalog_price_per_unit || item.unit_price}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px dashed var(--border)', paddingTop: '12px', marginTop: '5px' }}>
+                            <span style={{ fontSize: '12.5px', fontWeight: 700, opacity: 0.7 }}>Consolidated B2B Valuation:</span>
+                            <span style={{ fontSize: '18px', fontWeight: 900, color: 'var(--accent-1)' }}>
+                              £{(o.total_amount || o.items?.reduce((acc, curr) => acc + ((curr.offered_price_per_unit || curr.unit_price || 0) * curr.quantity), 0) || 0).toFixed(2)}
+                            </span>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
+              ))}          ))}
             </tbody>
           </table>
         </div>
@@ -320,7 +396,7 @@ export default function CustomerOrders({ products, push, user }) {
                     });
                   }} required>
                     <option value="">Select Product</option>
-                    {products?.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                    {products?.filter((p, index, self) => index === self.findIndex((t) => t.name === p.name)).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                   </select>
                 </div>
                 <div className="form-group">

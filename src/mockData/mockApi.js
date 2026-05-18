@@ -77,6 +77,10 @@ export async function mockRequest(method, url, bodyOrConfig, maybeConfig) {
       role = "dispatcher";
       username = "Dispatcher Admin";
       userId = 11;
+    } else if (email === "customer@sword.com") {
+      role = "customer";
+      username = "Valued Customer";
+      userId = 12;
     }
 
     const user = {
@@ -253,6 +257,10 @@ export async function mockRequest(method, url, bodyOrConfig, maybeConfig) {
     return ok(actions.createCustomer(body || {}));
   }
   const custId = matchJson(path, /^\/customers\/(\d+)$/);
+  if (custId && method.toLowerCase() === "get") {
+    const customer = getMockState().customers.find(c => c.id === Number(custId[1]));
+    return ok(customer || null);
+  }
   if (custId && method.toLowerCase() === "put") {
     return ok(actions.updateCustomer(Number(custId[1]), body || {}));
   }
@@ -275,6 +283,10 @@ export async function mockRequest(method, url, bodyOrConfig, maybeConfig) {
   const coReoptimize = matchJson(path, /^\/customer-orders\/(\d+)\/select-warehouse$/);
   if (coReoptimize && method.toLowerCase() === "post") {
     return ok(actions.reoptimizeCustomerOrder(Number(coReoptimize[1])));
+  }
+  const coDelete = matchJson(path, /^\/customer-orders\/(\d+)$/);
+  if (coDelete && method.toLowerCase() === "delete") {
+    return ok(actions.deleteCustomerOrder(Number(coDelete[1])));
   }
 
   // ── TRANSPORT ─────────────────────────────────────────────────────────────
