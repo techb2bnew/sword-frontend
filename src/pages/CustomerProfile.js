@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { API } from "../config";
 import { Country, State, City } from "country-state-city";
@@ -19,57 +19,69 @@ export default function CustomerProfile({ push, user }) {
     confirmPassword: "",
   });
 
-  useEffect(() => {
-    setCountries(Country.getAllCountries());
-    fetchProfile();
-  }, []);
+  const fetchProfile = useCallback(async () => {
+  if (!user?.id) return;
 
-  const fetchProfile = async () => {
-    setLoading(true);
-    try {
-      const headers = { Authorization: `Bearer ${localStorage.getItem("erp_token")}` };
-      // Fetch user profile from the newly created single customer endpoint
-      const res = await axios.get(`${API}/customers/${user.id}`, { headers });
-      
-      if (res.data) {
-        setProfile(res.data);
-        
-        // Populate state/cities based on initial country/state codes
-        if (res.data.country) {
-          const countryObj = Country.getAllCountries().find(
-            c => c.name === res.data.country || c.isoCode === res.data.country
+  setLoading(true);
+
+  try {
+    const headers = {
+      Authorization: `Bearer ${localStorage.getItem("erp_token")}`,
+    };
+
+    const res = await axios.get(`${API}/customers/${user.id}`, { headers });
+
+    if (res.data) {
+      setProfile(res.data);
+
+      if (res.data.country) {
+        const countryObj = Country.getAllCountries().find(
+          (c) => c.name === res.data.country || c.isoCode === res.data.country
+        );
+
+        if (countryObj) {
+          const countryStates = State.getStatesOfCountry(countryObj.isoCode);
+          setStates(countryStates);
+
+          let stateObj = countryStates.find(
+            (s) => s.name === res.data.state || s.isoCode === res.data.state
           );
-          if (countryObj) {
-            const countryStates = State.getStatesOfCountry(countryObj.isoCode);
-            setStates(countryStates);
-            
-            let stateObj = countryStates.find(
-              s => s.name === res.data.state || s.isoCode === res.data.state
+
+          if (!stateObj && res.data.city) {
+            const allCountryCities =
+              City.getCitiesOfCountry(countryObj.isoCode) || [];
+
+            const matchedCity = allCountryCities.find(
+              (c) =>
+                c.name.toLowerCase() === String(res.data.city).toLowerCase()
             );
 
-            // Intelligent Resolver: If state name doesn't match directly, find the city in the country to resolve its stateCode
-            if (!stateObj && res.data.city) {
-              const allCountryCities = City.getCitiesOfCountry(countryObj.isoCode) || [];
-              const matchedCity = allCountryCities.find(
-                c => c.name.toLowerCase() === res.data.city.toLowerCase()
+            if (matchedCity) {
+              stateObj = countryStates.find(
+                (s) => s.isoCode === matchedCity.stateCode
               );
-              if (matchedCity) {
-                stateObj = countryStates.find(s => s.isoCode === matchedCity.stateCode);
-              }
             }
+          }
 
-            if (stateObj) {
-              setCities(City.getCitiesOfState(countryObj.isoCode, stateObj.isoCode));
-            }
+          if (stateObj) {
+            setCities(
+              City.getCitiesOfState(countryObj.isoCode, stateObj.isoCode)
+            );
           }
         }
       }
-    } catch (err) {
-      push("Failed to load profile details", "error");
-    } finally {
-      setLoading(false);
     }
-  };
+  } catch (err) {
+    push("Failed to load profile details", "error");
+  } finally {
+    setLoading(false);
+  }
+  }, [user?.id, push]);
+
+  useEffect(() => {
+    setCountries(Country.getAllCountries());
+    fetchProfile();
+  }, [fetchProfile]);
 
   const handleCountryChange = (e) => {
     const code = e.target.value;

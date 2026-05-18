@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { API } from "../config";
 import Modal from "../components/Modal";
@@ -31,20 +31,28 @@ export default function CustomerProducts({ products, push, user, setActiveModule
   const [states, setStates] = useState([]);
   const [cities, setCities] = useState([]);
 
-  useEffect(() => {
-    setCountries(Country.getAllCountries());
-    fetchProfile();
-  }, []);
+  const fetchProfile = useCallback(async () => {
+  if (!user?.id) return;
 
-  const fetchProfile = async () => {
-    try {
-      const headers = { Authorization: `Bearer ${localStorage.getItem("erp_token")}` };
-      const res = await axios.get(`${API}/customers/${user?.id}`, { headers });
-      if (res.data) {
-        setCustomerProfile(res.data);
-      }
-    } catch {}
-  };
+  try {
+    const headers = {
+      Authorization: `Bearer ${localStorage.getItem("erp_token")}`,
+    };
+
+    const res = await axios.get(`${API}/customers/${user.id}`, { headers });
+
+    if (res.data) {
+      setCustomerProfile(res.data);
+    }
+  } catch (err) {
+    console.error("Failed to fetch customer profile:", err);
+  }
+}, [user?.id]);
+
+useEffect(() => {
+  setCountries(Country.getAllCountries());
+  fetchProfile();
+}, [fetchProfile]);
 
   const handleCountryChange = (e) => {
     const code = e.target.value;
